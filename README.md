@@ -35,10 +35,3 @@ python scripts/train.py --config configs/default.yaml
 
 Edit `configs/default.yaml` to set your data paths before training.
 
-## Results
-
-| Region | RMSE (µg/m³) | R² |
-|--------|-------------|-----|
-| Europe (in-distribution) | 5.24 | — |
-| India (OOD) | 7.88 | 0.880 |
-| USA / Canada (OOD) | 0.62 | 0.938 |
