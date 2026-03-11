@@ -542,6 +542,56 @@
 
         html { scroll-behavior: smooth; }
 
+        /* ── Interactive Animations ── */
+        .anim-section { background: var(--dark); color: var(--white); overflow: hidden; }
+        .anim-section .section-label { color: var(--accent); }
+        .anim-section .section-title { color: var(--white); }
+        .anim-section .section-subtitle { color: var(--gray-light); }
+
+        .anim-row {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 48px;
+            max-width: 1200px; margin: 0 auto;
+        }
+        @media (max-width: 1024px) { .anim-row { grid-template-columns: 1fr; } }
+
+        .anim-box {
+            background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px; padding: 32px; position: relative; overflow: hidden;
+        }
+        .anim-box h3 {
+            color: var(--accent); font-size: 1.1rem; margin-bottom: 8px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .anim-box p { color: var(--gray-light); font-size: 0.88rem; margin-bottom: 20px; line-height: 1.6; }
+        .anim-canvas-wrap {
+            position: relative; width: 100%; aspect-ratio: 1;
+            background: rgba(0,0,0,0.3); border-radius: 12px; overflow: hidden;
+        }
+        .anim-canvas-wrap canvas {
+            position: absolute; inset: 0; width: 100%; height: 100%;
+        }
+        .anim-controls {
+            display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap;
+        }
+        .anim-btn {
+            background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3);
+            color: var(--accent); padding: 8px 18px; border-radius: 8px;
+            cursor: pointer; font-size: 0.82rem; font-weight: 600;
+            font-family: 'Inter', sans-serif; transition: all 0.2s;
+        }
+        .anim-btn:hover { background: rgba(16,185,129,0.3); }
+        .anim-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+        .anim-legend {
+            display: flex; gap: 16px; margin-top: 12px; flex-wrap: wrap;
+        }
+        .anim-legend span {
+            display: flex; align-items: center; gap: 6px;
+            font-size: 0.75rem; color: var(--gray-light);
+        }
+        .anim-legend .dot {
+            width: 10px; height: 10px; border-radius: 50%; display: inline-block;
+        }
+
         /* ── Animated data flow ── */
         .dataflow {
             display: flex; align-items: center; justify-content: center;
@@ -593,6 +643,7 @@
             CRAN-PM
         </a>
         <ul class="nav-links">
+            <li><a href="#animations">Interactive</a></li>
             <li><a href="#architecture">Architecture</a></li>
             <li><a href="#method">Method</a></li>
             <li><a href="#results">Results</a></li>
@@ -687,6 +738,65 @@
             <div class="dataflow-arrow">&larr;</div>
             <div class="dataflow-node" style="background: var(--accent-light);">
                 GHAP + Elev<small>0.01&deg; &middot; 512&times;512 tiles</small>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ══════════════════════ INTERACTIVE ANIMATIONS ══════════════════════ -->
+<section class="anim-section reveal" id="animations">
+    <div class="container">
+        <p class="section-label">Interactive</p>
+        <h2 class="section-title">How CRAN-PM Works</h2>
+        <p class="section-subtitle">
+            Visualise the two core mechanisms: multi-resolution patch tokenisation and wind-guided token redistribution.
+        </p>
+
+        <div class="anim-row">
+            <!-- Animation 1: Coarse-to-Fine -->
+            <div class="anim-box">
+                <h3>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>
+                    Coarse-to-Fine Tokenisation
+                </h3>
+                <p>A PM<sub>2.5</sub> map is tokenised at two resolutions. The global branch creates coarse 25 km patches; the local branch splits fine 1 km tiles. Cross-attention bridges the gap.</p>
+                <div class="anim-canvas-wrap">
+                    <canvas id="cvsPatch" width="600" height="600"></canvas>
+                </div>
+                <div class="anim-controls">
+                    <button class="anim-btn active" onclick="setPatchPhase(0, this)">Full Map</button>
+                    <button class="anim-btn" onclick="setPatchPhase(1, this)">Coarse Patches</button>
+                    <button class="anim-btn" onclick="setPatchPhase(2, this)">Fine Tiles</button>
+                    <button class="anim-btn" onclick="setPatchPhase(3, this)">Cross-Attention</button>
+                </div>
+                <div class="anim-legend">
+                    <span><span class="dot" style="background:#f59e0b"></span>Global (25 km)</span>
+                    <span><span class="dot" style="background:#10b981"></span>Local (1 km)</span>
+                    <span><span class="dot" style="background:#ef4444"></span>Cross-Attention</span>
+                </div>
+            </div>
+
+            <!-- Animation 2: Wind-Guided Token Redistribution -->
+            <div class="anim-box">
+                <h3>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.59 4.59A2 2 0 1111 8H2m10.59 11.41A2 2 0 1014 16H2m15.73-8.27A2.5 2.5 0 1119.5 12H2"/></svg>
+                    Wind-Guided Token Redistribution
+                </h3>
+                <p>Tokens are reordered along the wind direction via a 1D Hilbert-like scan. Attention is biased toward upwind sources: $\gamma_{ij} = \cos(\theta_{ij} - \theta_{\text{wind}})$.</p>
+                <div class="anim-canvas-wrap">
+                    <canvas id="cvsWind" width="600" height="600"></canvas>
+                </div>
+                <div class="anim-controls">
+                    <button class="anim-btn active" onclick="setWindDir(0, this)">West Wind</button>
+                    <button class="anim-btn" onclick="setWindDir(1, this)">North Wind</button>
+                    <button class="anim-btn" onclick="setWindDir(2, this)">South-West</button>
+                    <button class="anim-btn" onclick="setWindDir(3, this)">Rotate</button>
+                </div>
+                <div class="anim-legend">
+                    <span><span class="dot" style="background:#3b82f6"></span>Upwind (high attn)</span>
+                    <span><span class="dot" style="background:#64748b"></span>Downwind (low attn)</span>
+                    <span><span class="dot" style="background:#f59e0b"></span>Query token</span>
+                </div>
             </div>
         </div>
     </div>
@@ -1245,6 +1355,520 @@ function copyCitation() {
         setTimeout(() => btn.textContent = 'Copy', 2000);
     });
 }
+
+// ══════════════════════════════════════════════════════════
+// ── Animation 1: Coarse-to-Fine Patch Splitting ──
+// ══════════════════════════════════════════════════════════
+(function() {
+    const cvs = document.getElementById('cvsPatch');
+    const ctx = cvs.getContext('2d');
+    let W, H, dpr;
+    let phase = 0, phaseT = 0; // 0=full, 1=coarse, 2=fine, 3=cross-attn
+    let animId;
+
+    // PM2.5 color map (viridis-like)
+    function pm25Color(v) {
+        // v in [0,1]
+        const r = Math.floor(68 + v * 187);
+        const g = Math.floor(1 + v * 80 + (1 - v) * 150);
+        const b = Math.floor(84 + (1 - v) * 120);
+        return `rgb(${Math.min(255,r)},${Math.min(255,g)},${Math.min(255,b)})`;
+    }
+
+    // Generate fake PM2.5 field
+    const GRID = 24;
+    const field = [];
+    for (let i = 0; i < GRID; i++) {
+        field[i] = [];
+        for (let j = 0; j < GRID; j++) {
+            // Create hotspots (Po Valley ~row 16-18, col 10-14) and smooth gradient
+            let v = 0.15 + 0.1 * Math.sin(i * 0.4) * Math.cos(j * 0.3);
+            // Hotspot 1
+            const d1 = Math.sqrt((i - 17) ** 2 + (j - 12) ** 2);
+            v += 0.5 * Math.exp(-d1 * d1 / 8);
+            // Hotspot 2
+            const d2 = Math.sqrt((i - 8) ** 2 + (j - 18) ** 2);
+            v += 0.35 * Math.exp(-d2 * d2 / 12);
+            // Hotspot 3
+            const d3 = Math.sqrt((i - 14) ** 2 + (j - 6) ** 2);
+            v += 0.25 * Math.exp(-d3 * d3 / 10);
+            field[i][j] = Math.min(1, Math.max(0, v));
+        }
+    }
+
+    function resize() {
+        const rect = cvs.parentElement.getBoundingClientRect();
+        dpr = window.devicePixelRatio || 1;
+        W = rect.width;
+        H = rect.height;
+        cvs.width = W * dpr;
+        cvs.height = H * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function lerp(a, b, t) { return a + (b - a) * t; }
+    function easeInOut(t) { return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; }
+
+    function draw() {
+        // Smoothly transition phaseT toward target phase
+        phaseT += (phase - phaseT) * 0.06;
+        if (Math.abs(phaseT - phase) < 0.001) phaseT = phase;
+
+        ctx.clearRect(0, 0, W, H);
+        const pad = 20;
+        const gw = (W - pad * 2) / GRID;
+        const gh = (H - pad * 2) / GRID;
+        const t = easeInOut(Math.min(1, Math.max(0, phaseT)));
+
+        // Draw PM2.5 field cells
+        for (let i = 0; i < GRID; i++) {
+            for (let j = 0; j < GRID; j++) {
+                const x = pad + j * gw;
+                const y = pad + i * gh;
+                ctx.fillStyle = pm25Color(field[i][j]);
+                ctx.fillRect(x, y, gw - 0.5, gh - 0.5);
+            }
+        }
+
+        // Phase 1+: Coarse grid lines (6x6 = 4-cell patches)
+        const coarseT = Math.min(1, Math.max(0, phaseT));
+        if (coarseT > 0.1) {
+            const alpha = Math.min(1, (coarseT - 0.1) / 0.9);
+            ctx.strokeStyle = `rgba(245, 158, 11, ${alpha})`;
+            ctx.lineWidth = 2.5;
+            const patchSize = 4;
+            for (let i = 0; i <= GRID; i += patchSize) {
+                ctx.beginPath();
+                ctx.moveTo(pad + i * gw, pad);
+                ctx.lineTo(pad + i * gw, pad + GRID * gh);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(pad, pad + i * gh);
+                ctx.lineTo(pad + GRID * gw, pad + i * gh);
+                ctx.stroke();
+            }
+            // Label coarse patches
+            if (alpha > 0.5) {
+                ctx.font = `${Math.max(9, gw * 0.6)}px Inter, sans-serif`;
+                ctx.fillStyle = `rgba(245, 158, 11, ${(alpha - 0.5) * 2})`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                let idx = 0;
+                for (let bi = 0; bi < GRID / patchSize; bi++) {
+                    for (let bj = 0; bj < GRID / patchSize; bj++) {
+                        const cx = pad + (bj + 0.5) * patchSize * gw;
+                        const cy = pad + (bi + 0.5) * patchSize * gh;
+                        ctx.fillText(`T${idx}`, cx, cy);
+                        idx++;
+                    }
+                }
+            }
+        }
+
+        // Phase 2+: Fine sub-grid in one coarse patch (zoom effect)
+        const fineT = Math.min(1, Math.max(0, phaseT - 1));
+        if (fineT > 0.05) {
+            const alpha = Math.min(1, fineT / 0.5);
+            // Highlight one coarse patch
+            const hi = 4, hj = 2; // patch row=4, col=2 (center-ish)
+            const px = pad + hj * 4 * gw;
+            const py = pad + hi * 4 * gh;
+            const pw = 4 * gw;
+            const ph = 4 * gh;
+
+            // Glow effect
+            ctx.save();
+            ctx.shadowColor = '#10b981';
+            ctx.shadowBlur = 15 * alpha;
+            ctx.strokeStyle = `rgba(16, 185, 129, ${alpha})`;
+            ctx.lineWidth = 3;
+            ctx.strokeRect(px, py, pw, ph);
+            ctx.restore();
+
+            // Fine grid lines inside
+            ctx.strokeStyle = `rgba(16, 185, 129, ${alpha * 0.7})`;
+            ctx.lineWidth = 1;
+            for (let k = 0; k <= 4; k++) {
+                for (let sub = 1; sub < 4; sub++) {
+                    // Vertical fine lines inside each cell
+                    const sx = px + k * gw + sub * gw / 4;
+                    if (sx < px + pw) {
+                        ctx.beginPath();
+                        ctx.moveTo(sx, py);
+                        ctx.lineTo(sx, py + ph);
+                        ctx.stroke();
+                    }
+                    // Horizontal
+                    const sy = py + k * gh + sub * gh / 4;
+                    if (sy < py + ph) {
+                        ctx.beginPath();
+                        ctx.moveTo(px, sy);
+                        ctx.lineTo(px + pw, sy);
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            // Label "1 km tiles"
+            ctx.font = `bold ${Math.max(10, gw * 0.7)}px Inter, sans-serif`;
+            ctx.fillStyle = `rgba(16, 185, 129, ${alpha})`;
+            ctx.textAlign = 'center';
+            ctx.fillText('1 km tiles', px + pw / 2, py - 8);
+        }
+
+        // Phase 3: Cross-attention arrows
+        const crossT = Math.min(1, Math.max(0, phaseT - 2));
+        if (crossT > 0.05) {
+            const alpha = Math.min(1, crossT / 0.5);
+            const time = Date.now() / 1000;
+            // Draw arrows from fine patch to surrounding coarse patches
+            const hi = 4, hj = 2;
+            const cx = pad + (hj + 0.5) * 4 * gw;
+            const cy = pad + (hi + 0.5) * 4 * gh;
+
+            const neighbors = [
+                [3, 1], [3, 2], [3, 3],
+                [4, 1],         [4, 3],
+                [5, 1], [5, 2], [5, 3],
+                [2, 2], [4, 0], [4, 4]
+            ];
+
+            neighbors.forEach((n, idx) => {
+                const nx = pad + (n[1] + 0.5) * 4 * gw;
+                const ny = pad + (n[0] + 0.5) * 4 * gh;
+                const dist = Math.sqrt((nx - cx) ** 2 + (ny - cy) ** 2);
+                const attnStrength = Math.exp(-dist / (W * 0.3));
+                const pulse = 0.5 + 0.5 * Math.sin(time * 2 + idx * 0.7);
+
+                // Animated dash
+                ctx.save();
+                ctx.strokeStyle = `rgba(239, 68, 68, ${alpha * (0.3 + 0.7 * attnStrength)})`;
+                ctx.lineWidth = 1.5 + attnStrength * 2;
+                ctx.setLineDash([6, 4]);
+                ctx.lineDashOffset = -time * 30 + idx * 5;
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.lineTo(nx, ny);
+                ctx.stroke();
+                ctx.restore();
+
+                // Attention dot at target
+                const r = 3 + attnStrength * 5 + pulse * 2;
+                ctx.beginPath();
+                ctx.arc(nx, ny, r, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(239, 68, 68, ${alpha * (0.4 + 0.6 * attnStrength)})`;
+                ctx.fill();
+            });
+
+            // Query token glow
+            const pr = 6 + 3 * Math.sin(time * 3);
+            ctx.beginPath();
+            ctx.arc(cx, cy, pr, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(16, 185, 129, ${alpha})`;
+            ctx.fill();
+            ctx.font = `bold ${Math.max(9, gw * 0.55)}px Inter, sans-serif`;
+            ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+            ctx.textAlign = 'center';
+            ctx.fillText('Q', cx, cy + 3.5);
+        }
+
+        animId = requestAnimationFrame(draw);
+    }
+
+    window.setPatchPhase = function(p, btn) {
+        phase = p;
+        btn.parentElement.querySelectorAll('.anim-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    };
+
+    resize();
+    window.addEventListener('resize', resize);
+    // Only animate when visible
+    const obs = new IntersectionObserver(entries => {
+        if (entries[0].isIntersecting) { if (!animId) draw(); }
+        else { cancelAnimationFrame(animId); animId = null; }
+    }, { threshold: 0.05 });
+    obs.observe(cvs.parentElement);
+})();
+
+// ══════════════════════════════════════════════════════════
+// ── Animation 2: Wind-Guided Token Redistribution ──
+// ══════════════════════════════════════════════════════════
+(function() {
+    const cvs = document.getElementById('cvsWind');
+    const ctx = cvs.getContext('2d');
+    let W, H, dpr;
+    let windAngle = Math.PI; // West wind = blowing from west = angle π (pointing east)
+    let targetAngle = Math.PI;
+    let rotating = false;
+    let animId;
+
+    const COLS = 8, ROWS = 8;
+    const NTOK = COLS * ROWS;
+
+    // Token positions (grid centers)
+    const tokens = [];
+    for (let i = 0; i < ROWS; i++) {
+        for (let j = 0; j < COLS; j++) {
+            tokens.push({
+                gridX: j, gridY: i,
+                x: 0, y: 0, // computed in draw
+                targetX: 0, targetY: 0,
+                value: 0.2 + 0.6 * Math.random(), // PM2.5 intensity
+                id: i * COLS + j
+            });
+        }
+    }
+
+    // Query token (center)
+    const queryIdx = 27; // row=3, col=3
+
+    function resize() {
+        const rect = cvs.parentElement.getBoundingClientRect();
+        dpr = window.devicePixelRatio || 1;
+        W = rect.width;
+        H = rect.height;
+        cvs.width = W * dpr;
+        cvs.height = H * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function draw() {
+        const time = Date.now() / 1000;
+
+        // Smooth wind angle transition
+        if (rotating) {
+            windAngle += 0.015;
+        } else {
+            let diff = targetAngle - windAngle;
+            // Normalize to [-π, π]
+            while (diff > Math.PI) diff -= 2 * Math.PI;
+            while (diff < -Math.PI) diff += 2 * Math.PI;
+            windAngle += diff * 0.05;
+        }
+
+        ctx.clearRect(0, 0, W, H);
+        const pad = 50;
+        const cellW = (W - pad * 2) / COLS;
+        const cellH = (H - pad * 2) / ROWS;
+        const tokR = Math.min(cellW, cellH) * 0.32;
+
+        // Compute attention scores based on wind
+        const qx = tokens[queryIdx].gridX;
+        const qy = tokens[queryIdx].gridY;
+
+        // Draw grid lines (faint)
+        ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= ROWS; i++) {
+            ctx.beginPath();
+            ctx.moveTo(pad, pad + i * cellH);
+            ctx.lineTo(pad + COLS * cellW, pad + i * cellH);
+            ctx.stroke();
+        }
+        for (let j = 0; j <= COLS; j++) {
+            ctx.beginPath();
+            ctx.moveTo(pad + j * cellW, pad);
+            ctx.lineTo(pad + j * cellW, pad + ROWS * cellH);
+            ctx.stroke();
+        }
+
+        // Draw wind field arrows (background)
+        ctx.save();
+        const windDx = Math.cos(windAngle);
+        const windDy = -Math.sin(windAngle); // canvas Y is flipped
+        for (let i = 0; i < ROWS; i++) {
+            for (let j = 0; j < COLS; j++) {
+                const cx = pad + (j + 0.5) * cellW;
+                const cy = pad + (i + 0.5) * cellH;
+                const arrowLen = tokR * 0.6;
+                const ax = cx + windDx * arrowLen * 0.5;
+                const ay = cy + windDy * arrowLen * 0.5;
+                const bx = cx - windDx * arrowLen * 0.5;
+                const by = cy - windDy * arrowLen * 0.5;
+
+                ctx.strokeStyle = 'rgba(148, 163, 184, 0.15)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(bx, by);
+                ctx.lineTo(ax, ay);
+                ctx.stroke();
+                // Arrowhead
+                const headLen = 4;
+                const angle = Math.atan2(ay - by, ax - bx);
+                ctx.beginPath();
+                ctx.moveTo(ax, ay);
+                ctx.lineTo(ax - headLen * Math.cos(angle - 0.5), ay - headLen * Math.sin(angle - 0.5));
+                ctx.moveTo(ax, ay);
+                ctx.lineTo(ax - headLen * Math.cos(angle + 0.5), ay - headLen * Math.sin(angle + 0.5));
+                ctx.stroke();
+            }
+        }
+        ctx.restore();
+
+        // Draw attention connections from query to all other tokens
+        tokens.forEach((tok, idx) => {
+            if (idx === queryIdx) return;
+            const cx = pad + (tok.gridX + 0.5) * cellW;
+            const cy = pad + (tok.gridY + 0.5) * cellH;
+            const qcx = pad + (qx + 0.5) * cellW;
+            const qcy = pad + (qy + 0.5) * cellH;
+
+            // Compute γij (cosine alignment with wind)
+            const dx = tok.gridX - qx;
+            const dy = -(tok.gridY - qy); // flip Y
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 0.1) return;
+
+            const cosAlign = (dx * Math.cos(windAngle) + dy * Math.sin(windAngle)) / dist;
+            // γ ∈ [-1, 1], positive = upwind
+            const gamma = cosAlign;
+            // Attention ~ softmax(gamma * beta)
+            const beta = 2.0;
+            const attn = Math.exp(gamma * beta) / (1 + Math.exp(gamma * beta));
+            const distFactor = Math.exp(-dist / 5);
+
+            const lineAlpha = attn * distFactor * 0.6;
+            if (lineAlpha < 0.02) return;
+
+            // Color: blue for upwind, gray for downwind
+            const r = Math.floor(59 + (1 - attn) * 40);
+            const g = Math.floor(130 * attn + 116 * (1 - attn));
+            const b = Math.floor(246 * attn + 140 * (1 - attn));
+
+            ctx.save();
+            ctx.strokeStyle = `rgba(${r},${g},${b},${lineAlpha})`;
+            ctx.lineWidth = 0.5 + attn * 2.5;
+            ctx.setLineDash(attn > 0.5 ? [] : [3, 3]);
+            ctx.beginPath();
+            ctx.moveTo(qcx, qcy);
+            ctx.lineTo(cx, cy);
+            ctx.stroke();
+            ctx.restore();
+        });
+
+        // Draw tokens
+        tokens.forEach((tok, idx) => {
+            const cx = pad + (tok.gridX + 0.5) * cellW;
+            const cy = pad + (tok.gridY + 0.5) * cellH;
+
+            if (idx === queryIdx) {
+                // Query token: golden with pulse
+                const pulse = 1 + 0.15 * Math.sin(time * 3);
+                ctx.beginPath();
+                ctx.arc(cx, cy, tokR * pulse, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(245, 158, 11, 0.2)';
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(cx, cy, tokR * 0.8, 0, Math.PI * 2);
+                ctx.fillStyle = '#f59e0b';
+                ctx.fill();
+                ctx.fillStyle = '#0f172a';
+                ctx.font = `bold ${Math.max(9, tokR * 0.7)}px Inter, sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('Q', cx, cy);
+                return;
+            }
+
+            // Compute attention for color
+            const dx = tok.gridX - qx;
+            const dy = -(tok.gridY - qy);
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            let attn = 0.3;
+            if (dist > 0.1) {
+                const cosAlign = (dx * Math.cos(windAngle) + dy * Math.sin(windAngle)) / dist;
+                attn = Math.exp(cosAlign * 2) / (1 + Math.exp(cosAlign * 2));
+            }
+
+            // Token circle
+            const r = tokR * (0.5 + 0.4 * attn);
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, 0, Math.PI * 2);
+
+            // Blue (high attn) to slate (low attn)
+            const cr = Math.floor(59 * attn + 100 * (1 - attn));
+            const cg = Math.floor(130 * attn + 116 * (1 - attn));
+            const cb = Math.floor(246 * attn + 140 * (1 - attn));
+            ctx.fillStyle = `rgba(${cr},${cg},${cb},${0.4 + 0.6 * attn})`;
+            ctx.fill();
+
+            // γ label
+            if (dist > 0.1 && dist < 4) {
+                const cosAlign = (dx * Math.cos(windAngle) + dy * Math.sin(windAngle)) / dist;
+                ctx.font = `${Math.max(7, tokR * 0.4)}px JetBrains Mono, monospace`;
+                ctx.fillStyle = `rgba(255,255,255,${0.3 + 0.5 * attn})`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(cosAlign.toFixed(1), cx, cy);
+            }
+        });
+
+        // Wind direction indicator (top-right corner)
+        ctx.save();
+        const indX = W - 60, indY = 50, indR = 25;
+        ctx.beginPath();
+        ctx.arc(indX, indY, indR, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,255,255,0.05)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Arrow
+        const aDx = Math.cos(windAngle) * indR * 0.7;
+        const aDy = -Math.sin(windAngle) * indR * 0.7;
+        ctx.beginPath();
+        ctx.moveTo(indX - aDx * 0.5, indY - aDy * 0.5);
+        ctx.lineTo(indX + aDx, indY + aDy);
+        ctx.strokeStyle = '#10b981';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+        // Arrowhead
+        const aAngle = Math.atan2(aDy, aDx);
+        ctx.beginPath();
+        ctx.moveTo(indX + aDx, indY + aDy);
+        ctx.lineTo(indX + aDx - 8 * Math.cos(aAngle - 0.5), indY + aDy - 8 * Math.sin(aAngle - 0.5));
+        ctx.lineTo(indX + aDx - 8 * Math.cos(aAngle + 0.5), indY + aDy - 8 * Math.sin(aAngle + 0.5));
+        ctx.closePath();
+        ctx.fillStyle = '#10b981';
+        ctx.fill();
+
+        // Label
+        ctx.font = '10px Inter, sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.textAlign = 'center';
+        ctx.fillText('Wind', indX, indY + indR + 14);
+        ctx.restore();
+
+        animId = requestAnimationFrame(draw);
+    }
+
+    const windPresets = [
+        Math.PI,         // West (wind from west → blows east)
+        Math.PI / 2,     // North (wind from north → blows south)
+        Math.PI * 1.25,  // South-West
+    ];
+
+    window.setWindDir = function(idx, btn) {
+        btn.parentElement.querySelectorAll('.anim-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        if (idx === 3) {
+            rotating = true;
+        } else {
+            rotating = false;
+            targetAngle = windPresets[idx];
+        }
+    };
+
+    resize();
+    window.addEventListener('resize', resize);
+    const obs = new IntersectionObserver(entries => {
+        if (entries[0].isIntersecting) { if (!animId) draw(); }
+        else { cancelAnimationFrame(animId); animId = null; }
+    }, { threshold: 0.05 });
+    obs.observe(cvs.parentElement);
+})();
 
 // ── Smooth nav active state ──
 const sections = document.querySelectorAll('section[id]');
