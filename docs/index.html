@@ -610,11 +610,11 @@
     <div class="hero-particles" id="particles"></div>
     <div class="container">
         <div class="hero-content">
-            <div class="badge">ECCV 2026 Submission</div>
+            <div class="badge">ECCV 2026</div>
             <h1><span>CRAN</span><span class="dash">-</span><span>PM</span></h1>
             <p class="subtitle">
-                Cross-Resolution Attention Network for daily PM<sub>2.5</sub> prediction at 1 km resolution
-                across Europe, with zero-shot transfer to USA, Canada, and India.
+                A dual-branch Vision Transformer for daily PM<sub>2.5</sub> forecasting at 1 km resolution
+                across Europe. 29 million pixels in 1.8 seconds. Zero-shot transfer to USA, Canada, and India.
             </p>
             <div class="buttons">
                 <a href="https://github.com/AmmarKheder/cran_pm" class="btn btn-primary" target="_blank">
@@ -642,24 +642,24 @@
         <h2 class="section-title">Paper Summary</h2>
         <div class="abstract-box">
             <p>
-                We present <strong>CRAN-PM</strong> (Cross-Resolution Attention Network), a two-branch Vision Transformer
-                that downscales coarse ERA5 and CAMS reanalysis fields (0.25&deg;) to daily PM<sub>2.5</sub> maps at
-                0.01&deg; (~1 km) resolution across Europe. The architecture bridges the resolution gap through
-                <em>wind-guided cross-attention</em>, where fine-scale local tokens query coarse global context
-                with a directional bias aligned to atmospheric transport.
+                Vision Transformers have achieved remarkable success in spatio-temporal prediction, but their scalability
+                remains limited for ultra-high-resolution, continent-scale domains required in real-world environmental
+                monitoring. A single European air-quality map with 1 km resolution comprises <strong>29 million pixels</strong>,
+                far beyond the limits of naive self-attention.
             </p>
             <p>
-                Trained on the GHAP PM<sub>2.5</sub> dataset (2017&ndash;2021) and validated on 2022, CRAN-PM achieves
-                state-of-the-art spatial accuracy at lead times from T+1 to T+4 days. The model generalises
-                <strong>zero-shot</strong> to unseen continents &mdash; predicting wildfire smoke plumes over
-                USA/Canada and pollution hotspots across the Indo-Gangetic Plain &mdash; without any fine-tuning,
-                demonstrating that learned cross-resolution attention transfers across geographies.
+                We introduce <strong>CRAN-PM</strong>, a dual-branch Vision Transformer that leverages
+                <em>cross-resolution attention</em> to efficiently fuse global meteorological data (25 km) with
+                local high-resolution PM<sub>2.5</sub> at the current time (1 km). We further introduce
+                <em>elevation-aware self-attention</em> and <em>wind-guided cross-attention</em> to force the network
+                to learn physically consistent feature representation for PM<sub>2.5</sub> forecasting.
             </p>
             <p>
-                A <em>delta prediction</em> strategy (output = PM<sub>2.5</sub>(t) + &Delta;) with zero-initialised
-                decoder ensures the model starts from a persistence baseline, stabilising training and improving
-                convergence. The CNN decoder with progressive upsampling and skip connections recovers
-                fine-grained spatial detail lost in the patch-based transformer encoding.
+                CRAN-PM is fully trainable and memory-efficient and generates the complete 29-million-pixel European
+                map in <strong>1.8 seconds</strong> on a single GPU. Evaluated on daily PM<sub>2.5</sub> forecasting
+                throughout Europe in 2022 (362 days, 2,971 stations of the European Environment Agency),
+                it reduces RMSE by <strong>4.7%</strong> at T+1 and <strong>10.7%</strong> at T+3 compared to the
+                best single-scale baseline, while reducing bias in complex terrain by <strong>36%</strong>.
             </p>
         </div>
     </div>
@@ -670,23 +670,23 @@
     <div class="container">
         <div class="dataflow">
             <div class="dataflow-node">
-                ERA5<small>0.25&deg; &middot; 30 channels</small>
+                ERA5 + CAMS<small>0.25&deg; &middot; 70 ch (t, t&minus;1)</small>
             </div>
             <div class="dataflow-arrow">&rarr;</div>
             <div class="dataflow-node">
-                CAMS<small>0.1&deg; &middot; 5 pollutants</small>
+                Global Branch<small>735 tokens &middot; dim 768</small>
             </div>
             <div class="dataflow-arrow">&rarr;</div>
             <div class="dataflow-node" style="border-color: var(--primary);">
-                CRAN-PM<small>Cross-Resolution Attention</small>
+                Cross-Attention<small>Fine queries Coarse</small>
             </div>
-            <div class="dataflow-arrow">&rarr;</div>
+            <div class="dataflow-arrow">&larr;</div>
             <div class="dataflow-node">
-                GHAP<small>0.01&deg; &middot; PM<sub>2.5</sub></small>
+                Local Branch<small>1,024 tokens &middot; dim 512</small>
             </div>
-            <div class="dataflow-arrow">&rarr;</div>
+            <div class="dataflow-arrow">&larr;</div>
             <div class="dataflow-node" style="background: var(--accent-light);">
-                1 km PM<sub>2.5</sub><small>512 &times; 512 output</small>
+                GHAP + Elev<small>0.01&deg; &middot; 512&times;512 tiles</small>
             </div>
         </div>
     </div>
@@ -701,11 +701,17 @@
             A global branch processes coarse meteorology while a local branch encodes fine-scale PM<sub>2.5</sub>
             and elevation. Wind-guided cross-attention bridges the 25&times; resolution gap.
         </p>
-        <img src="assets/figures/fig2_architecture.png" alt="CRAN-PM Architecture" class="arch-image zoomable" onclick="openLightbox(this)">
+        <img src="assets/figures/fig2_architecture.jpg" alt="CRAN-PM Architecture" class="arch-image zoomable" onclick="openLightbox(this)">
         <p class="arch-caption">
-            <span class="fig-number">Figure 2.</span> CRAN-PM architecture: global branch (ERA5 + CAMS, dim=768, depth=8)
-            and local branch (GHAP + elevation, dim=512, depth=6) connected via cross-attention with wind-direction bias.
+            <span class="fig-number">Figure 2.</span> A global branch (top) encodes coarse meteorological fields with wind-guided token reordering and elevation-aware attention; a local branch (bottom) encodes high-resolution PM<sub>2.5</sub> subimages. Two wind-biased cross-attention layers fuse the branches (fine queries coarse). A PixelShuffle-based decoder reconstructs the residual, and subimage predictions are reassembled into the full European map.
         </p>
+
+        <div style="margin-top: 48px;">
+            <img src="assets/figures/fig2_architecture_overview.jpg" alt="CRAN-PM Architecture Overview" class="arch-image zoomable" onclick="openLightbox(this)">
+            <p class="arch-caption">
+                <span class="fig-number">Figure 7.</span> CRAN-PM architecture overview showing the elevation-aware attention mechanism (yellow inset) and the data flow between global and local branches.
+            </p>
+        </div>
     </div>
 </section>
 
@@ -727,12 +733,13 @@
                     Cross-Resolution Attention
                 </h3>
                 <p>
-                    Local tokens (1 km) attend to global tokens (25 km) through cross-attention layers.
-                    Wind-direction alignment bias ensures that local patches preferentially attend to
-                    upwind global context, following atmospheric transport physics.
+                    Local fine-resolution tokens (1 km) query global coarse tokens (25 km) for large-scale
+                    meteorological context. A wind-guided bias $B^{\text{wind}}_{ij} = \beta \cdot \gamma_{ij}$
+                    aligns attention to upwind sources, reflecting the causal physics: local PM<sub>2.5</sub>
+                    responds to global meteorology, not vice versa.
                 </p>
                 <div class="math-block">
-                    $\text{Attn}(Q_\ell, K_g, V_g) = \text{softmax}\!\left(\frac{Q_\ell K_g^\top}{\sqrt{d}} + B_\text{wind}\right) V_g$
+                    $\text{CrossAttn} = \text{softmax}\!\left(\frac{QK^\top}{\sqrt{d_h}} + B^{\text{wind}}\right) V$
                 </div>
             </div>
 
@@ -758,12 +765,12 @@
                     <div class="method-icon">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>
                     </div>
-                    Progressive CNN Decoder
+                    PixelShuffle Decoder
                 </h3>
                 <p>
-                    Bilinear upsampling from 32&times;32 transformer output to 512&times;512 through five stages
-                    (32&rarr;64&rarr;128&rarr;256&rarr;512) with residual blocks and skip connections from the
-                    local encoder, preserving fine spatial details.
+                    Fused local tokens are reshaped to 512&times;32&times;32, then four PixelShuffle upsampling
+                    blocks progressively restore 512&times;512 resolution (512&rarr;256&rarr;128&rarr;64&rarr;32 channels).
+                    Each block: convolution + PixelShuffle + residual block. Prevents checkerboard artifacts.
                 </p>
             </div>
 
@@ -772,15 +779,15 @@
                     <div class="method-icon">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
                     </div>
-                    Land-Only Masked Loss
+                    Elevation-Aware Attention
                 </h3>
                 <p>
-                    MSE is computed only over land pixels where PM<sub>2.5</sub> observations exist,
-                    preventing ocean/sea pixels from diluting the training signal. Critical for coastal
-                    and island regions across Europe.
+                    An asymmetric ReLU bias penalises attention to higher-elevation sources while leaving
+                    downhill interactions unaffected, consistent with katabatic flows. Injected as an
+                    architectural prior in the first attention block of each branch.
                 </p>
                 <div class="math-block">
-                    $\mathcal{L} = \frac{1}{|\mathcal{M}|}\sum_{i \in \mathcal{M}} \left(\hat{y}_i - y_i\right)^2$
+                    $B^{\text{elev}}_{ij} = -\alpha \cdot \text{ReLU}\!\left(\frac{E_j - E_i}{E_0}\right)$
                 </div>
             </div>
         </div>
@@ -788,7 +795,7 @@
         <!-- Stats row -->
         <div class="stats">
             <div class="stat">
-                <div class="stat-value" data-target="47">47M</div>
+                <div class="stat-value" data-target="96">96M</div>
                 <div class="stat-label">Parameters</div>
             </div>
             <div class="stat">
@@ -796,12 +803,12 @@
                 <div class="stat-label">Output Resolution</div>
             </div>
             <div class="stat">
-                <div class="stat-value">T+4</div>
-                <div class="stat-label">Max Lead Time</div>
+                <div class="stat-value">1.8s</div>
+                <div class="stat-label">Inference Time</div>
             </div>
             <div class="stat">
-                <div class="stat-value">25x</div>
-                <div class="stat-label">Super-Resolution</div>
+                <div class="stat-value">29M</div>
+                <div class="stat-label">Pixels per Map</div>
             </div>
             <div class="stat">
                 <div class="stat-value">0-shot</div>
@@ -826,39 +833,27 @@
                 <img src="assets/figures/fig3_europe_maps.png" alt="Europe-wide PM2.5 evaluation maps" class="zoomable" onclick="openLightbox(this)">
                 <div class="case-study-content">
                     <span class="case-study-tag">Europe-Wide</span>
-                    <h3>PM<sub>2.5</sub> Prediction Maps at 1 km</h3>
+                    <h3>Europe-wide PM<sub>2.5</sub> Evaluation (2022 Test Set)</h3>
                     <p>
-                        <span class="fig-number">Figure 3.</span> Ground truth vs. CRAN-PM predictions across Europe for the 2022 test set.
-                        The model captures regional pollution gradients, urban hotspots, and seasonal patterns
-                        at 1 km resolution from coarse ERA5/CAMS inputs.
+                        <span class="fig-number">Figure 3.</span> (a) Ground truth (GHAP, 1 km) for January 25, 2022.
+                        (b) CRAN-PM T+1 prediction at 1 km; inset shows the Po Valley zoom.
+                        (c, d) RMSE degradation across forecast horizons T+1 to T+3, evaluated at 1 km and 25 km.
+                        CRAN-PM consistently outperforms all baselines, with the gap widening at longer horizons.
                     </p>
                 </div>
             </div>
 
             <!-- Figure 4: Spatial zoom -->
             <div class="case-study">
-                <img src="assets/figures/fig4_spatial.png" alt="Regional PM2.5 comparison" class="zoomable" onclick="openLightbox(this)">
+                <img src="assets/figures/fig4_spatial.jpg" alt="Regional PM2.5 comparison" class="zoomable" onclick="openLightbox(this)">
                 <div class="case-study-content">
                     <span class="case-study-tag">Spatial Detail</span>
-                    <h3>Regional Comparison at 1 km (T+1)</h3>
+                    <h3>Regional PM<sub>2.5</sub> Comparison at 1 km (T+1)</h3>
                     <p>
-                        <span class="fig-number">Figure 4.</span> Zoom-in comparisons across European regions showing
-                        fine-scale spatial structure captured by CRAN-PM. Mountain valleys, coastal gradients,
-                        and urban plumes are resolved at the kilometre scale.
-                    </p>
-                </div>
-            </div>
-
-            <!-- Cross-attention visualization -->
-            <div class="case-study">
-                <img src="assets/figures/cross_attention.png" alt="Cross-attention visualization" class="zoomable" onclick="openLightbox(this)">
-                <div class="case-study-content">
-                    <span class="case-study-tag">Interpretability</span>
-                    <h3>Cross-Resolution Attention Patterns</h3>
-                    <p>
-                        <span class="fig-number">Figure 5.</span> Learned attention weights between local (1 km) and global (25 km) tokens.
-                        Attention heads specialise: some focus on nearby meteorological context while others
-                        capture long-range transport pathways aligned with wind direction.
+                        <span class="fig-number">Figure 4.</span> Five regions (rows): Po Valley, Paris, Silesia, Rhine-Ruhr, London.
+                        Columns: (a) ground truth, (b) CAMS, (c) ClimaX, (d) CRAN-PM, (e) error (ours &minus; GT).
+                        CAMS produces overly smooth fields; ClimaX shows blocky 25 km artifacts;
+                        CRAN-PM recovers fine-grained spatial structure with SSIM &ge; 0.63 across all regions.
                     </p>
                 </div>
             </div>
@@ -868,41 +863,31 @@
                 <img src="assets/figures/fig5_temporal.png" alt="Temporal PM2.5 evolution" class="zoomable" onclick="openLightbox(this)">
                 <div class="case-study-content">
                     <span class="case-study-tag">Temporal</span>
-                    <h3>PM<sub>2.5</sub> Temporal Evolution Across Six Regions</h3>
+                    <h3>Temporal PM<sub>2.5</sub> Evolution Across Six Regions (2022, T+1)</h3>
                     <p>
-                        <span class="fig-number">Figure 5.</span> Daily PM<sub>2.5</sub> time series for 2022 (T+1) across six European regions.
-                        CRAN-PM tracks pollution episodes, seasonal cycles, and extreme events with high fidelity.
-                        Shaded bands show prediction uncertainty across the spatial domain.
+                        <span class="fig-number">Figure 5.</span> Blue: observed (GHAP, 1 km); red: CRAN-PM prediction.
+                        (a) All Europe, (b) Po Valley, (c) Paris Basin, (d) Silesia, (e) Balkans, (f) Iberian Peninsula.
+                        Inset bar charts compare regional RMSE across all methods; CRAN-PM (dark red) achieves the lowest error in all regions.
                     </p>
                 </div>
             </div>
 
             <!-- Figure 6: Ablation -->
             <div class="case-study">
-                <img src="assets/figures/fig6_ablation.png" alt="Ablation study" class="zoomable" onclick="openLightbox(this)">
+                <img src="assets/figures/fig6_ablation.jpg" alt="Ablation study" class="zoomable" onclick="openLightbox(this)">
                 <div class="case-study-content">
                     <span class="case-study-tag">Ablation</span>
-                    <h3>Progressive Loss Improvements at 1 km</h3>
+                    <h3>Ablation: Progressive Loss Improvements at 1 km (T+1)</h3>
                     <p>
-                        <span class="fig-number">Figure 6.</span> Ablation study showing the impact of each architectural component.
-                        Cross-resolution attention, delta prediction, and wind-direction bias each contribute
-                        significantly to the final performance.
+                        <span class="fig-number">Figure 6.</span> Five regions (rows): Po Valley, Paris, Silesia, Rhine-Ruhr, London.
+                        Columns: (a) ground truth, (b) baseline (MSE only, RMSE = 5.24), (c) +FFL (RMSE = 5.04),
+                        (d) CRAN-PM full (RMSE = 4.95), (e) error (full &minus; GT).
+                        The baseline produces blurred outputs (SSIM &le; 0.34); FFL dramatically recovers spatial structure;
+                        station loss further reduces systematic bias.
                     </p>
                 </div>
             </div>
 
-            <!-- Error map -->
-            <div class="case-study">
-                <img src="assets/figures/error_map.png" alt="Error map" class="zoomable" onclick="openLightbox(this)">
-                <div class="case-study-content">
-                    <span class="case-study-tag">Error Analysis</span>
-                    <h3>Spatial Error Distribution</h3>
-                    <p>
-                        Spatially-resolved RMSE map showing where CRAN-PM performs best (coastal, rural)
-                        and where challenges remain (mountain valleys, industrial zones).
-                    </p>
-                </div>
-            </div>
         </div>
     </div>
 </section>
@@ -929,11 +914,11 @@
                 <img src="assets/figures/fig8_ood_usa.png" alt="Zero-shot USA/Canada wildfire" class="zoomable" onclick="openLightbox(this)">
                 <div class="case-study-content">
                     <span class="case-study-tag">USA / Canada</span>
-                    <h3>Wildfire Smoke Episode (2022-09-18)</h3>
+                    <h3>Zero-Shot Transfer to USA/Canada (2022-09-18, Wildfire Episode)</h3>
                     <p>
-                        <span class="fig-number">Figure 8.</span> Zero-shot prediction during a major wildfire episode over
-                        western USA and Canada. CRAN-PM correctly identifies the smoke plume extent and
-                        intensity pattern despite never seeing North American geography during training.
+                        <span class="fig-number">Figure 8.</span> Zero-shot prediction during a major wildfire episode.
+                        CRAN-PM identifies the smoke plume extent and intensity despite never seeing
+                        North American geography during training.
                     </p>
                 </div>
             </div>
@@ -945,7 +930,7 @@
                 <img src="assets/figures/fig9_ood_india.png" alt="Zero-shot India IGP" class="zoomable" onclick="openLightbox(this)">
                 <div class="case-study-content">
                     <span class="case-study-tag">India</span>
-                    <h3>Indo-Gangetic Plain Hotspot Day (2022-03-17)</h3>
+                    <h3>Zero-Shot Transfer to India (2022-03-17, IGP Hotspot Day)</h3>
                     <p>
                         <span class="fig-number">Figure 9.</span> Zero-shot transfer to India capturing the persistent
                         pollution belt across the Indo-Gangetic Plain. The model resolves the sharp gradient
@@ -986,56 +971,6 @@
     </div>
 </section>
 
-<!-- ══════════════════════ SUPPLEMENTARY FIGURES ══════════════════════ -->
-<section class="results reveal" id="supplementary">
-    <div class="container">
-        <p class="section-label">Supplementary</p>
-        <h2 class="section-title">Additional Analyses</h2>
-        <p class="section-subtitle">
-            Lead-time degradation, extreme event detection, and 3D terrain-pollution interactions.
-        </p>
-
-        <div class="two-col">
-            <div class="case-study">
-                <img src="assets/figures/supp_leadtime.png" alt="Lead-time degradation" class="zoomable" onclick="openLightbox(this)">
-                <div class="case-study-content">
-                    <span class="case-study-tag">Lead Time</span>
-                    <h3>RMSE by Forecast Horizon</h3>
-                    <p>
-                        Performance degradation from T+1 to T+4 across regions.
-                        Graceful skill decay with useful predictions maintained through 4-day horizons.
-                    </p>
-                </div>
-            </div>
-            <div class="case-study">
-                <img src="assets/figures/supp_extreme.png" alt="Extreme events" class="zoomable" onclick="openLightbox(this)">
-                <div class="case-study-content">
-                    <span class="case-study-tag">Extreme Events</span>
-                    <h3>High-Pollution Episode Detection</h3>
-                    <p>
-                        CRAN-PM's ability to capture extreme PM<sub>2.5</sub> events (&gt;75th percentile),
-                        critical for public health early warning systems.
-                    </p>
-                </div>
-            </div>
-        </div>
-
-        <div style="margin-top: 32px;">
-            <div class="case-study">
-                <img src="assets/figures/terrain_3d.png" alt="3D terrain PM2.5 interaction" class="zoomable" onclick="openLightbox(this)">
-                <div class="case-study-content">
-                    <span class="case-study-tag">3D Visualization</span>
-                    <h3>Terrain-PM<sub>2.5</sub> Interaction</h3>
-                    <p>
-                        3D surface rendering showing how PM<sub>2.5</sub> accumulates in valleys and is blocked
-                        by mountain ranges. The cross-resolution attention implicitly learns these
-                        topographic effects from ERA5 elevation data.
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
 
 <!-- ══════════════════════ EQUATIONS ══════════════════════ -->
 <section class="equations reveal" id="equations">
@@ -1048,27 +983,27 @@
 
         <div class="eq-grid">
             <div class="eq-card">
-                <h3>Cross-Resolution Attention</h3>
-                <p>Local tokens query global context with wind-direction alignment bias.</p>
-                $$\text{CRA}(Q_\ell, K_g, V_g) = \text{softmax}\!\left(\frac{Q_\ell K_g^\top}{\sqrt{d_k}} + B_{\text{wind}}\right) V_g$$
-            </div>
-
-            <div class="eq-card">
                 <h3>Delta Prediction</h3>
-                <p>Output is today's observation plus a learned residual, zero-initialised at training start.</p>
-                $$\hat{y}_{t+\tau} = y_t + f_\theta\!\left(\text{Dec}\!\left(\text{CRA}(z_\ell, z_g)\right)\right), \quad f_\theta(0) \approx 0$$
+                <p>Output is today's observation plus a learned residual.</p>
+                $$\hat{y}_{t+\tau} = x^{\ell}_t + f_\theta\!\left(\mathbf{x}^{\text{g}}_t, \mathbf{x}^{\ell}_t, \tau\right)$$
             </div>
 
             <div class="eq-card">
-                <h3>Wind-Direction Bias</h3>
-                <p>Directional alignment between local patch $i$ and global patch $j$ based on wind vectors.</p>
-                $$B_{\text{wind}}(i,j) = \alpha \cdot \cos\!\left(\theta_{ij} - \theta_{\text{wind}}\right) \cdot \exp\!\left(-\frac{\|p_i - p_j\|^2}{2\sigma^2}\right)$$
+                <h3>Elevation-Aware Attention</h3>
+                <p>Asymmetric bias penalises attention to higher-elevation sources, consistent with katabatic flows.</p>
+                $$B^{\text{elev}}_{ij} = -\alpha \cdot \text{ReLU}\!\Big(\frac{E_j - E_i}{E_0}\Big), \quad \text{Attn} = \text{softmax}\!\Big(\frac{QK^\top}{\sqrt{d_h}} + B^{\text{elev}} + B^{\text{rel}}\Big)V$$
             </div>
 
             <div class="eq-card">
-                <h3>Land-Masked Loss</h3>
-                <p>MSE computed only over land pixels with valid PM<sub>2.5</sub> observations.</p>
-                $$\mathcal{L} = \frac{1}{|\mathcal{M}|} \sum_{i \in \mathcal{M}} \left(\hat{y}_i - y_i\right)^2, \quad \mathcal{M} = \{i : m_i = 1\}$$
+                <h3>Wind-Guided Cross-Attention</h3>
+                <p>Upwind alignment score $\gamma_{ij} \in [-1,1]$ between local patch $i$ and global patch $j$.</p>
+                $$\gamma_{ij} = \frac{(\mathbf{p}_i - \mathbf{p}_j)}{\|\mathbf{p}_i - \mathbf{p}_j\|} \cdot \frac{(u_{10,i}, v_{10,i})}{\|(u_{10,i}, v_{10,i})\|}, \quad B^{\text{wind}}_{ij} = \beta \cdot \gamma_{ij}$$
+            </div>
+
+            <div class="eq-card">
+                <h3>Training Objective</h3>
+                <p>Pixel MSE + focal frequency loss + EEA station supervision.</p>
+                $$\mathcal{L} = \mathcal{L}_{\text{pixel}} + \lambda_{\text{FFL}}\,\mathcal{L}_{\text{FFL}} + \lambda_{\text{station}}\,\mathcal{L}_{\text{station}}$$
             </div>
         </div>
     </div>
@@ -1088,16 +1023,16 @@
                 <table>
                     <thead><tr><th colspan="2">Architecture</th></tr></thead>
                     <tbody>
-                        <tr><td>Global Input</td><td>ERA5 + CAMS, 0.25&deg;, 35 channels</td></tr>
-                        <tr><td>Local Input</td><td>GHAP + elevation, 0.01&deg;, 4 channels</td></tr>
+                        <tr><td>Global Input</td><td>ERA5 + CAMS, 0.25&deg;, 70 channels</td></tr>
+                        <tr><td>Local Input</td><td>GHAP + elev/lat/lon, 0.01&deg;, 5 channels</td></tr>
                         <tr><td>Global Patches</td><td>168 &times; 280 &rarr; 735 tokens (patch 8)</td></tr>
-                        <tr><td>Local Patches</td><td>512 &times; 512 &rarr; 1024 tokens (patch 16)</td></tr>
-                        <tr><td>Global Dim / Depth</td><td>768 / 8 layers</td></tr>
-                        <tr><td>Local Dim / Depth</td><td>512 / 6 layers</td></tr>
-                        <tr><td>Cross-Attention</td><td>2 layers, 8 heads</td></tr>
-                        <tr><td>Decoder</td><td>CNN, 5-stage bilinear upsample</td></tr>
-                        <tr><td>Output</td><td>512 &times; 512 PM<sub>2.5</sub> (1 km)</td></tr>
-                        <tr><td>Parameters</td><td>~47M</td></tr>
+                        <tr><td>Local Patches</td><td>512 &times; 512 &rarr; 1,024 tokens (patch 16)</td></tr>
+                        <tr><td>Global Dim / Depth</td><td>768 / 8 blocks (1 elev-aware + 7 Swin)</td></tr>
+                        <tr><td>Local Dim / Depth</td><td>512 / 6 blocks (1 elev-aware + 5 Swin)</td></tr>
+                        <tr><td>Cross-Attention</td><td>2 layers, 8 heads, dim 64</td></tr>
+                        <tr><td>Decoder</td><td>4-stage PixelShuffle</td></tr>
+                        <tr><td>Full Map</td><td>4,192 &times; 6,992 (126 tiles)</td></tr>
+                        <tr><td>Parameters</td><td>96M</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -1108,13 +1043,13 @@
                     <tbody>
                         <tr><td>Optimizer</td><td>AdamW (&beta;1=0.9, &beta;2=0.999)</td></tr>
                         <tr><td>Learning Rate</td><td>5e-5 (cosine decay)</td></tr>
-                        <tr><td>Batch Size</td><td>4 per GPU &times; 8 GPUs</td></tr>
-                        <tr><td>Precision</td><td>bf16-mixed</td></tr>
-                        <tr><td>Epochs</td><td>300 (best at epoch ~16)</td></tr>
+                        <tr><td>Batch Size</td><td>32 (gradient accumulation)</td></tr>
+                        <tr><td>Precision</td><td>bfloat16 mixed</td></tr>
+                        <tr><td>Epochs</td><td>30 (5-epoch warmup)</td></tr>
                         <tr><td>Train Period</td><td>2017&ndash;2021</td></tr>
                         <tr><td>Test Period</td><td>2022</td></tr>
-                        <tr><td>Loss</td><td>Land-masked MSE</td></tr>
-                        <tr><td>Hardware</td><td>8&times; AMD MI250X (LUMI-G)</td></tr>
+                        <tr><td>Loss</td><td>MSE + FFL + Station (&lambda;=0.1)</td></tr>
+                        <tr><td>Hardware</td><td>64&times; AMD MI250X (LUMI-G)</td></tr>
                         <tr><td>Framework</td><td>PyTorch + DDP</td></tr>
                     </tbody>
                 </table>
@@ -1127,10 +1062,10 @@
                 <table>
                     <thead><tr><th>Data Source</th><th>Resolution</th><th>Variables</th></tr></thead>
                     <tbody>
-                        <tr><td>ERA5</td><td>0.25&deg;</td><td>u10, v10, t2m, msl, sp + 5 pressure levels</td></tr>
-                        <tr><td>CAMS EAC4</td><td>0.1&deg;</td><td>NO<sub>2</sub>, O<sub>3</sub>, SO<sub>2</sub>, CO, PM<sub>10</sub></td></tr>
-                        <tr><td>GHAP</td><td>0.01&deg;</td><td>PM<sub>2.5</sub> (target)</td></tr>
-                        <tr><td>GMTED2010</td><td>~250 m</td><td>Elevation</td></tr>
+                        <tr><td>ERA5</td><td>0.25&deg;</td><td>60 ch: surface + 5 pressure levels (t &amp; t&minus;1)</td></tr>
+                        <tr><td>CAMS Analysis</td><td>0.25&deg;</td><td>10 ch: PM<sub>2.5</sub>, PM<sub>10</sub>, NO<sub>2</sub>, O<sub>3</sub>, CO (t &amp; t&minus;1)</td></tr>
+                        <tr><td>GHAP</td><td>0.01&deg;</td><td>PM<sub>2.5</sub> satellite-derived (t &amp; t&minus;1)</td></tr>
+                        <tr><td>SRTM</td><td>~1 km</td><td>Elevation + lat/lon</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -1208,12 +1143,14 @@
 
         <div class="citation-box">
             <button class="copy-btn" onclick="copyCitation()">Copy</button>
-<pre style="margin:0; white-space: pre-wrap;">@article{kheder2026cranpm,
-  title   = {{CRAN-PM}: Cross-Resolution Attention Network
-             for High-Resolution {PM}$_{2.5}$ Forecasting},
-  author  = {Kheder, Ammar and others},
-  journal = {arXiv preprint},
-  year    = {2026}
+<pre style="margin:0; white-space: pre-wrap;">@inproceedings{kheder2026cranpm,
+  title     = {Cross-Resolution Attention Network for
+               High-Resolution {PM}$_{2.5}$ Prediction},
+  author    = {Kheder, Ammar and Toropainen, Helmi and
+               Peng, Wenqing and Ant{\~a}o, Samuel and
+               Liu, Zhi-Song and Boy, Michael},
+  booktitle = {European Conference on Computer Vision (ECCV)},
+  year      = {2026}
 }</pre>
         </div>
     </div>
