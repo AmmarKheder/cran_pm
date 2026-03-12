@@ -749,7 +749,7 @@
         <p class="section-label">Interactive</p>
         <h2 class="section-title">How CRAN-PM Works</h2>
         <p class="section-subtitle">
-            Seven interactive visualisations of the core mechanisms behind CRAN-PM.
+            Five interactive visualisations of the core mechanisms behind CRAN-PM.
         </p>
 
         <!-- Row 1: Tokenisation + Wind -->
@@ -799,58 +799,12 @@
             </div>
         </div>
 
-        <!-- Row 2: Tiling + Delta Prediction -->
-        <div class="anim-row" style="margin-top: 48px;">
-            <div class="anim-box">
-                <h3>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2"/><path d="M2 8h20"/><path d="M2 14h20"/><path d="M8 2v20"/><path d="M14 2v20"/></svg>
-                    3 &middot; Europe Tiling (126 Tiles)
-                </h3>
-                <p>The full 4192&times;6992 European map is split into 126 overlapping 512&times;512 tiles. Each tile is processed independently then reassembled. Watch the tiling unfold.</p>
-                <div class="anim-canvas-wrap">
-                    <canvas id="cvsTiling" width="600" height="600"></canvas>
-                </div>
-                <div class="anim-controls">
-                    <button class="anim-btn active" onclick="setTilingMode(0, this)">Full Map</button>
-                    <button class="anim-btn" onclick="setTilingMode(1, this)">Tile Grid</button>
-                    <button class="anim-btn" onclick="setTilingMode(2, this)">Animate</button>
-                </div>
-                <div class="anim-legend">
-                    <span><span class="dot" style="background:#10b981"></span>Current tile</span>
-                    <span><span class="dot" style="background:#3b82f6"></span>Processed</span>
-                    <span><span class="dot" style="background:rgba(255,255,255,0.15)"></span>Pending</span>
-                </div>
-            </div>
-
-            <div class="anim-box">
-                <h3>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v10"/><path d="M18.364 5.636l-7.071 7.071"/><circle cx="12" cy="12" r="10"/><path d="M12 12l4 8"/></svg>
-                    4 &middot; Delta Prediction
-                </h3>
-                <p>Instead of predicting absolute PM<sub>2.5</sub>, the model predicts a residual &Delta;. The final output is today's observation + &Delta;. Zero-init ensures starting from persistence baseline.</p>
-                <div class="anim-canvas-wrap">
-                    <canvas id="cvsDelta" width="600" height="600"></canvas>
-                </div>
-                <div class="anim-controls">
-                    <button class="anim-btn active" onclick="setDeltaPhase(0, this)">Today (y<sub>t</sub>)</button>
-                    <button class="anim-btn" onclick="setDeltaPhase(1, this)">Residual (&Delta;)</button>
-                    <button class="anim-btn" onclick="setDeltaPhase(2, this)">Prediction (y<sub>t</sub>+&Delta;)</button>
-                    <button class="anim-btn" onclick="setDeltaPhase(3, this)">Animate</button>
-                </div>
-                <div class="anim-legend">
-                    <span><span class="dot" style="background:#f59e0b"></span>PM<sub>2.5</sub> today</span>
-                    <span><span class="dot" style="background:#ef4444"></span>Increase (&Delta;&gt;0)</span>
-                    <span><span class="dot" style="background:#3b82f6"></span>Decrease (&Delta;&lt;0)</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Row 3: Elevation + PixelShuffle -->
+        <!-- Row 2: Elevation + PixelShuffle -->
         <div class="anim-row" style="margin-top: 48px;">
             <div class="anim-box">
                 <h3>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 20L2 20"/><path d="M2 20l5-8 3 4 4-10 3 6 5-4"/></svg>
-                    5 &middot; Elevation-Aware Attention
+                    3 &middot; Elevation-Aware Attention
                 </h3>
                 <p>An asymmetric ReLU bias penalises attention to higher-elevation sources. Pollution flows downhill (katabatic) but is blocked uphill. $B^{\text{elev}}_{ij} = -\alpha \cdot \text{ReLU}(E_j - E_i)$</p>
                 <div class="anim-canvas-wrap">
@@ -871,7 +825,7 @@
             <div class="anim-box">
                 <h3>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-                    6 &middot; PixelShuffle Decoder
+                    4 &middot; PixelShuffle Decoder
                 </h3>
                 <p>Fused tokens are reshaped to 32&times;32 then progressively upsampled through 4 PixelShuffle stages to the final 512&times;512 resolution. Watch pixels unfold.</p>
                 <div class="anim-canvas-wrap">
@@ -896,7 +850,7 @@
             <div class="anim-box">
                 <h3>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
-                    7 &middot; Pollution Transport Simulation
+                    5 &middot; Pollution Transport Simulation
                 </h3>
                 <p>Watch particles of PM<sub>2.5</sub> emitted from industrial sources, carried by the wind field across terrain. Particles accumulate in valleys (Po Valley, Silesia) where mountains block dispersion &mdash; the physical intuition behind elevation-aware and wind-guided attention.</p>
                 <div class="anim-canvas-wrap" style="aspect-ratio: 2/1;">
@@ -1987,279 +1941,7 @@ function copyCitation() {
 })();
 
 // ══════════════════════════════════════════════════════════
-// ── Animation 3: Europe Tiling ──
-// ══════════════════════════════════════════════════════════
-(function() {
-    const cvs = document.getElementById('cvsTiling');
-    const ctx = cvs.getContext('2d');
-    let W, H, dpr, animId;
-    let mode = 0; // 0=full, 1=grid, 2=animate
-    let animTile = 0, animTime = 0;
-
-    const TILE_COLS = 14, TILE_ROWS = 9;
-    const TOTAL = TILE_COLS * TILE_ROWS; // 126
-
-    // Fake PM2.5 Europe-shaped field
-    function europeShape(r, c, rows, cols) {
-        const nx = c / cols, ny = r / rows;
-        // Rough Europe mask
-        const cx = 0.45, cy = 0.45;
-        const inLand = Math.sqrt((nx - cx) ** 2 + (ny - cy) ** 2) < 0.42 + 0.08 * Math.sin(nx * 12) + 0.05 * Math.cos(ny * 8);
-        if (!inLand) return -1; // ocean
-        let v = 0.1 + 0.15 * Math.sin(nx * 5) * Math.cos(ny * 4);
-        // Po Valley hotspot
-        v += 0.5 * Math.exp(-((nx - 0.52) ** 2 + (ny - 0.62) ** 2) / 0.008);
-        // Paris
-        v += 0.3 * Math.exp(-((nx - 0.35) ** 2 + (ny - 0.42) ** 2) / 0.01);
-        // Silesia
-        v += 0.35 * Math.exp(-((nx - 0.58) ** 2 + (ny - 0.45) ** 2) / 0.008);
-        return Math.min(1, Math.max(0, v));
-    }
-
-    function pm25C(v) {
-        if (v < 0) return '#1a2332';
-        const r = Math.floor(30 + v * 225);
-        const g = Math.floor(100 + (1 - v) * 120 + v * 40);
-        const b = Math.floor(60 + (1 - v) * 140);
-        return `rgb(${Math.min(255,r)},${Math.min(255,g)},${Math.min(255,b)})`;
-    }
-
-    function resize() {
-        const rect = cvs.parentElement.getBoundingClientRect();
-        dpr = window.devicePixelRatio || 1;
-        W = rect.width; H = rect.height;
-        cvs.width = W * dpr; cvs.height = H * dpr;
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    }
-
-    function draw() {
-        ctx.clearRect(0, 0, W, H);
-        const pad = 20;
-        const mapW = W - pad * 2, mapH = H - pad * 2;
-        const RES = 80; // grid resolution for drawing
-
-        // Draw base map
-        const cellW = mapW / RES, cellH = mapH / RES;
-        for (let r = 0; r < RES; r++) {
-            for (let c = 0; c < RES; c++) {
-                const v = europeShape(r, c, RES, RES);
-                ctx.fillStyle = pm25C(v);
-                ctx.fillRect(pad + c * cellW, pad + r * cellH, cellW + 0.5, cellH + 0.5);
-            }
-        }
-
-        const tileW = mapW / TILE_COLS, tileH = mapH / TILE_ROWS;
-
-        if (mode >= 1) {
-            // Draw tile grid
-            for (let ti = 0; ti < TILE_ROWS; ti++) {
-                for (let tj = 0; tj < TILE_COLS; tj++) {
-                    const idx = ti * TILE_COLS + tj;
-                    const tx = pad + tj * tileW, ty = pad + ti * tileH;
-                    let state = 'pending';
-                    if (mode === 2) {
-                        if (idx < Math.floor(animTile)) state = 'done';
-                        else if (idx === Math.floor(animTile)) state = 'current';
-                    }
-
-                    if (state === 'done') {
-                        ctx.strokeStyle = 'rgba(59, 130, 246, 0.6)';
-                        ctx.lineWidth = 1.5;
-                        ctx.fillStyle = 'rgba(59, 130, 246, 0.08)';
-                        ctx.fillRect(tx, ty, tileW, tileH);
-                    } else if (state === 'current') {
-                        ctx.strokeStyle = '#10b981';
-                        ctx.lineWidth = 2.5;
-                        ctx.shadowColor = '#10b981';
-                        ctx.shadowBlur = 12;
-                        ctx.fillStyle = 'rgba(16, 185, 129, 0.15)';
-                        ctx.fillRect(tx, ty, tileW, tileH);
-                        ctx.shadowBlur = 0;
-                    } else {
-                        ctx.strokeStyle = 'rgba(255,255,255,0.15)';
-                        ctx.lineWidth = 1;
-                    }
-                    ctx.strokeRect(tx, ty, tileW, tileH);
-                    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
-                    ctx.lineWidth = 1;
-                }
-            }
-
-            // Counter
-            const processed = mode === 2 ? Math.floor(animTile) : 0;
-            ctx.fillStyle = 'rgba(0,0,0,0.6)';
-            ctx.fillRect(W - 120, H - 40, 110, 30);
-            ctx.fillStyle = '#10b981';
-            ctx.font = 'bold 13px Inter, sans-serif';
-            ctx.textAlign = 'right';
-            ctx.fillText(`${Math.min(processed, TOTAL)} / ${TOTAL}`, W - 18, H - 20);
-        }
-
-        if (mode === 2) {
-            animTile += 0.35;
-            if (animTile > TOTAL + 10) animTile = 0;
-        }
-
-        animId = requestAnimationFrame(draw);
-    }
-
-    window.setTilingMode = function(m, btn) {
-        mode = m; animTile = 0;
-        btn.parentElement.querySelectorAll('.anim-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-    };
-
-    resize();
-    window.addEventListener('resize', resize);
-    const obs = new IntersectionObserver(entries => {
-        if (entries[0].isIntersecting) { if (!animId) draw(); }
-        else { cancelAnimationFrame(animId); animId = null; }
-    }, { threshold: 0.05 });
-    obs.observe(cvs.parentElement);
-})();
-
-// ══════════════════════════════════════════════════════════
-// ── Animation 4: Delta Prediction ──
-// ══════════════════════════════════════════════════════════
-(function() {
-    const cvs = document.getElementById('cvsDelta');
-    const ctx = cvs.getContext('2d');
-    let W, H, dpr, animId;
-    let phase = 0, phaseT = 0; // 0=today, 1=delta, 2=prediction, 3=animate
-    let autoT = 0;
-
-    const N = 32;
-    const today = [], delta = [];
-    // Generate today's PM2.5
-    for (let i = 0; i < N; i++) {
-        today[i] = []; delta[i] = [];
-        for (let j = 0; j < N; j++) {
-            let v = 0.15 + 0.1 * Math.sin(i * 0.25) * Math.cos(j * 0.2);
-            v += 0.55 * Math.exp(-((i - 20) ** 2 + (j - 16) ** 2) / 20);
-            v += 0.3 * Math.exp(-((i - 10) ** 2 + (j - 24) ** 2) / 15);
-            today[i][j] = Math.min(1, Math.max(0, v));
-            // Delta: changes for tomorrow (some increase, some decrease)
-            let d = 0;
-            d += 0.25 * Math.exp(-((i - 22) ** 2 + (j - 18) ** 2) / 12); // increase near hotspot shift
-            d -= 0.2 * Math.exp(-((i - 20) ** 2 + (j - 14) ** 2) / 10); // decrease where it was
-            d += 0.15 * Math.exp(-((i - 8) ** 2 + (j - 26) ** 2) / 8);
-            d -= 0.1 * Math.exp(-((i - 12) ** 2 + (j - 22) ** 2) / 10);
-            delta[i][j] = Math.max(-0.4, Math.min(0.4, d));
-        }
-    }
-
-    function resize() {
-        const rect = cvs.parentElement.getBoundingClientRect();
-        dpr = window.devicePixelRatio || 1;
-        W = rect.width; H = rect.height;
-        cvs.width = W * dpr; cvs.height = H * dpr;
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    }
-
-    function pm25C(v) {
-        v = Math.min(1, Math.max(0, v));
-        const r = Math.floor(30 + v * 225);
-        const g = Math.floor(100 + (1 - v) * 120 + v * 40);
-        const b = Math.floor(60 + (1 - v) * 140);
-        return `rgb(${Math.min(255,r)},${Math.min(255,g)},${Math.min(255,b)})`;
-    }
-
-    function deltaC(d) {
-        if (d > 0) {
-            const t = Math.min(1, d / 0.3);
-            return `rgb(${Math.floor(60 + 195 * t)}, ${Math.floor(60 - 20 * t)}, ${Math.floor(60 - 20 * t)})`;
-        } else {
-            const t = Math.min(1, -d / 0.3);
-            return `rgb(${Math.floor(60 - 20 * t)}, ${Math.floor(60 + 50 * t)}, ${Math.floor(60 + 195 * t)})`;
-        }
-    }
-
-    function draw() {
-        ctx.clearRect(0, 0, W, H);
-        const pad = 20;
-        const cellW = (W - pad * 2) / N, cellH = (H - pad * 2) / N;
-
-        let blendT = 0;
-        if (phase === 3) {
-            autoT += 0.008;
-            blendT = (Math.sin(autoT * Math.PI * 2) + 1) / 2;
-        } else {
-            const target = phase === 0 ? 0 : (phase === 1 ? 0 : 1);
-            phaseT += (target - phaseT) * 0.05;
-            blendT = phaseT;
-        }
-
-        for (let i = 0; i < N; i++) {
-            for (let j = 0; j < N; j++) {
-                const x = pad + j * cellW, y = pad + i * cellH;
-
-                if (phase === 1 && blendT < 0.01) {
-                    // Show delta only
-                    ctx.fillStyle = deltaC(delta[i][j]);
-                } else {
-                    const v = today[i][j] + delta[i][j] * blendT;
-                    ctx.fillStyle = pm25C(v);
-                }
-                ctx.fillRect(x, y, cellW + 0.5, cellH + 0.5);
-            }
-        }
-
-        // Show delta overlay when in delta mode
-        if (phase === 1) {
-            for (let i = 0; i < N; i++) {
-                for (let j = 0; j < N; j++) {
-                    const x = pad + j * cellW, y = pad + i * cellH;
-                    ctx.fillStyle = deltaC(delta[i][j]);
-                    ctx.fillRect(x, y, cellW + 0.5, cellH + 0.5);
-                }
-            }
-        }
-
-        // Labels
-        ctx.fillStyle = 'rgba(0,0,0,0.6)';
-        ctx.fillRect(pad, pad, 120, 28);
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 12px Inter, sans-serif';
-        ctx.textAlign = 'left';
-        if (phase === 0) ctx.fillText('Today (y_t)', pad + 8, pad + 18);
-        else if (phase === 1) ctx.fillText('Residual (Δ)', pad + 8, pad + 18);
-        else if (phase === 2) ctx.fillText('Prediction (y_t + Δ)', pad + 8, pad + 18);
-        else {
-            const pct = Math.round(blendT * 100);
-            ctx.fillText(`Blend: ${pct}% Δ`, pad + 8, pad + 18);
-        }
-
-        // Formula overlay
-        if (phase === 3 || phase === 2) {
-            ctx.fillStyle = 'rgba(0,0,0,0.65)';
-            const fw = 220, fh = 32;
-            ctx.fillRect(W / 2 - fw / 2, H - pad - fh - 5, fw, fh);
-            ctx.fillStyle = '#10b981';
-            ctx.font = 'bold 13px JetBrains Mono, monospace';
-            ctx.textAlign = 'center';
-            ctx.fillText('ŷ_{t+1} = y_t + Δ_θ', W / 2, H - pad - 14);
-        }
-
-        animId = requestAnimationFrame(draw);
-    }
-
-    window.setDeltaPhase = function(p, btn) {
-        phase = p; if (p !== 3) autoT = 0;
-        btn.parentElement.querySelectorAll('.anim-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-    };
-
-    resize();
-    window.addEventListener('resize', resize);
-    const obs = new IntersectionObserver(entries => {
-        if (entries[0].isIntersecting) { if (!animId) draw(); }
-        else { cancelAnimationFrame(animId); animId = null; }
-    }, { threshold: 0.05 });
-    obs.observe(cvs.parentElement);
-})();
-
-// ══════════════════════════════════════════════════════════
-// ── Animation 5: Elevation-Aware Attention ──
+// ── Animation 3: Elevation-Aware Attention ──
 // ══════════════════════════════════════════════════════════
 (function() {
     const cvs = document.getElementById('cvsElev');
@@ -2498,7 +2180,7 @@ function copyCitation() {
 })();
 
 // ══════════════════════════════════════════════════════════
-// ── Animation 6: PixelShuffle Decoder ──
+// ── Animation 4: PixelShuffle Decoder ──
 // ══════════════════════════════════════════════════════════
 (function() {
     const cvs = document.getElementById('cvsShuffle');
@@ -2641,7 +2323,7 @@ function copyCitation() {
 })();
 
 // ══════════════════════════════════════════════════════════
-// ── Animation 7: Pollution Transport Simulation ──
+// ── Animation 5: Pollution Transport Simulation ──
 // ══════════════════════════════════════════════════════════
 (function() {
     const cvs = document.getElementById('cvsTransport');
