@@ -749,15 +749,15 @@
         <p class="section-label">Interactive</p>
         <h2 class="section-title">How CRAN-PM Works</h2>
         <p class="section-subtitle">
-            Visualise the two core mechanisms: multi-resolution patch tokenisation and wind-guided token redistribution.
+            Seven interactive visualisations of the core mechanisms behind CRAN-PM.
         </p>
 
+        <!-- Row 1: Tokenisation + Wind -->
         <div class="anim-row">
-            <!-- Animation 1: Coarse-to-Fine -->
             <div class="anim-box">
                 <h3>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>
-                    Coarse-to-Fine Tokenisation
+                    1 &middot; Coarse-to-Fine Tokenisation
                 </h3>
                 <p>A PM<sub>2.5</sub> map is tokenised at two resolutions. The global branch creates coarse 25 km patches; the local branch splits fine 1 km tiles. Cross-attention bridges the gap.</p>
                 <div class="anim-canvas-wrap">
@@ -776,13 +776,12 @@
                 </div>
             </div>
 
-            <!-- Animation 2: Wind-Guided Token Redistribution -->
             <div class="anim-box">
                 <h3>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.59 4.59A2 2 0 1111 8H2m10.59 11.41A2 2 0 1014 16H2m15.73-8.27A2.5 2.5 0 1119.5 12H2"/></svg>
-                    Wind-Guided Token Redistribution
+                    2 &middot; Wind-Guided Attention
                 </h3>
-                <p>Tokens are reordered along the wind direction via a 1D Hilbert-like scan. Attention is biased toward upwind sources: $\gamma_{ij} = \cos(\theta_{ij} - \theta_{\text{wind}})$.</p>
+                <p>Attention is biased toward upwind sources via a learnable wind alignment score: $\gamma_{ij} = \cos(\theta_{ij} - \theta_{\text{wind}})$. Upwind tokens receive higher attention weights.</p>
                 <div class="anim-canvas-wrap">
                     <canvas id="cvsWind" width="600" height="600"></canvas>
                 </div>
@@ -796,6 +795,123 @@
                     <span><span class="dot" style="background:#3b82f6"></span>Upwind (high attn)</span>
                     <span><span class="dot" style="background:#64748b"></span>Downwind (low attn)</span>
                     <span><span class="dot" style="background:#f59e0b"></span>Query token</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 2: Tiling + Delta Prediction -->
+        <div class="anim-row" style="margin-top: 48px;">
+            <div class="anim-box">
+                <h3>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="2"/><path d="M2 8h20"/><path d="M2 14h20"/><path d="M8 2v20"/><path d="M14 2v20"/></svg>
+                    3 &middot; Europe Tiling (126 Tiles)
+                </h3>
+                <p>The full 4192&times;6992 European map is split into 126 overlapping 512&times;512 tiles. Each tile is processed independently then reassembled. Watch the tiling unfold.</p>
+                <div class="anim-canvas-wrap">
+                    <canvas id="cvsTiling" width="600" height="600"></canvas>
+                </div>
+                <div class="anim-controls">
+                    <button class="anim-btn active" onclick="setTilingMode(0, this)">Full Map</button>
+                    <button class="anim-btn" onclick="setTilingMode(1, this)">Tile Grid</button>
+                    <button class="anim-btn" onclick="setTilingMode(2, this)">Animate</button>
+                </div>
+                <div class="anim-legend">
+                    <span><span class="dot" style="background:#10b981"></span>Current tile</span>
+                    <span><span class="dot" style="background:#3b82f6"></span>Processed</span>
+                    <span><span class="dot" style="background:rgba(255,255,255,0.15)"></span>Pending</span>
+                </div>
+            </div>
+
+            <div class="anim-box">
+                <h3>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v10"/><path d="M18.364 5.636l-7.071 7.071"/><circle cx="12" cy="12" r="10"/><path d="M12 12l4 8"/></svg>
+                    4 &middot; Delta Prediction
+                </h3>
+                <p>Instead of predicting absolute PM<sub>2.5</sub>, the model predicts a residual &Delta;. The final output is today's observation + &Delta;. Zero-init ensures starting from persistence baseline.</p>
+                <div class="anim-canvas-wrap">
+                    <canvas id="cvsDelta" width="600" height="600"></canvas>
+                </div>
+                <div class="anim-controls">
+                    <button class="anim-btn active" onclick="setDeltaPhase(0, this)">Today (y<sub>t</sub>)</button>
+                    <button class="anim-btn" onclick="setDeltaPhase(1, this)">Residual (&Delta;)</button>
+                    <button class="anim-btn" onclick="setDeltaPhase(2, this)">Prediction (y<sub>t</sub>+&Delta;)</button>
+                    <button class="anim-btn" onclick="setDeltaPhase(3, this)">Animate</button>
+                </div>
+                <div class="anim-legend">
+                    <span><span class="dot" style="background:#f59e0b"></span>PM<sub>2.5</sub> today</span>
+                    <span><span class="dot" style="background:#ef4444"></span>Increase (&Delta;&gt;0)</span>
+                    <span><span class="dot" style="background:#3b82f6"></span>Decrease (&Delta;&lt;0)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 3: Elevation + PixelShuffle -->
+        <div class="anim-row" style="margin-top: 48px;">
+            <div class="anim-box">
+                <h3>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 20L2 20"/><path d="M2 20l5-8 3 4 4-10 3 6 5-4"/></svg>
+                    5 &middot; Elevation-Aware Attention
+                </h3>
+                <p>An asymmetric ReLU bias penalises attention to higher-elevation sources. Pollution flows downhill (katabatic) but is blocked uphill. $B^{\text{elev}}_{ij} = -\alpha \cdot \text{ReLU}(E_j - E_i)$</p>
+                <div class="anim-canvas-wrap">
+                    <canvas id="cvsElev" width="600" height="600"></canvas>
+                </div>
+                <div class="anim-controls">
+                    <button class="anim-btn active" onclick="setElevMode(0, this)">Terrain</button>
+                    <button class="anim-btn" onclick="setElevMode(1, this)">Attention Flow</button>
+                    <button class="anim-btn" onclick="setElevMode(2, this)">Particles</button>
+                </div>
+                <div class="anim-legend">
+                    <span><span class="dot" style="background:#10b981"></span>Allowed (downhill)</span>
+                    <span><span class="dot" style="background:#ef4444"></span>Penalised (uphill)</span>
+                    <span><span class="dot" style="background:#f59e0b"></span>Pollution</span>
+                </div>
+            </div>
+
+            <div class="anim-box">
+                <h3>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                    6 &middot; PixelShuffle Decoder
+                </h3>
+                <p>Fused tokens are reshaped to 32&times;32 then progressively upsampled through 4 PixelShuffle stages to the final 512&times;512 resolution. Watch pixels unfold.</p>
+                <div class="anim-canvas-wrap">
+                    <canvas id="cvsShuffle" width="600" height="600"></canvas>
+                </div>
+                <div class="anim-controls">
+                    <button class="anim-btn active" onclick="setShuffleStage(0, this)">32&times;32</button>
+                    <button class="anim-btn" onclick="setShuffleStage(1, this)">64&times;64</button>
+                    <button class="anim-btn" onclick="setShuffleStage(2, this)">128&times;128</button>
+                    <button class="anim-btn" onclick="setShuffleStage(3, this)">256&times;256</button>
+                    <button class="anim-btn" onclick="setShuffleStage(4, this)">512&times;512</button>
+                </div>
+                <div class="anim-legend">
+                    <span><span class="dot" style="background:#8b5cf6"></span>Channel depth</span>
+                    <span><span class="dot" style="background:#10b981"></span>Spatial resolution</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 4: Pollution Transport (full width) -->
+        <div style="margin-top: 48px; max-width: 1200px; margin-left: auto; margin-right: auto;">
+            <div class="anim-box">
+                <h3>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+                    7 &middot; Pollution Transport Simulation
+                </h3>
+                <p>Watch particles of PM<sub>2.5</sub> emitted from industrial sources, carried by the wind field across terrain. Particles accumulate in valleys (Po Valley, Silesia) where mountains block dispersion &mdash; the physical intuition behind elevation-aware and wind-guided attention.</p>
+                <div class="anim-canvas-wrap" style="aspect-ratio: 2/1;">
+                    <canvas id="cvsTransport" width="1200" height="600"></canvas>
+                </div>
+                <div class="anim-controls">
+                    <button class="anim-btn active" onclick="setTransportWind(0, this)">West Wind</button>
+                    <button class="anim-btn" onclick="setTransportWind(1, this)">East Wind</button>
+                    <button class="anim-btn" onclick="setTransportWind(2, this)">Calm</button>
+                    <button class="anim-btn" onclick="resetTransport(this)">Reset</button>
+                </div>
+                <div class="anim-legend">
+                    <span><span class="dot" style="background:#ef4444"></span>PM<sub>2.5</sub> particles</span>
+                    <span><span class="dot" style="background:#f59e0b"></span>Emission sources</span>
+                    <span><span class="dot" style="background:#64748b"></span>Terrain</span>
                 </div>
             </div>
         </div>
@@ -1859,6 +1975,876 @@ function copyCitation() {
             rotating = false;
             targetAngle = windPresets[idx];
         }
+    };
+
+    resize();
+    window.addEventListener('resize', resize);
+    const obs = new IntersectionObserver(entries => {
+        if (entries[0].isIntersecting) { if (!animId) draw(); }
+        else { cancelAnimationFrame(animId); animId = null; }
+    }, { threshold: 0.05 });
+    obs.observe(cvs.parentElement);
+})();
+
+// ══════════════════════════════════════════════════════════
+// ── Animation 3: Europe Tiling ──
+// ══════════════════════════════════════════════════════════
+(function() {
+    const cvs = document.getElementById('cvsTiling');
+    const ctx = cvs.getContext('2d');
+    let W, H, dpr, animId;
+    let mode = 0; // 0=full, 1=grid, 2=animate
+    let animTile = 0, animTime = 0;
+
+    const TILE_COLS = 14, TILE_ROWS = 9;
+    const TOTAL = TILE_COLS * TILE_ROWS; // 126
+
+    // Fake PM2.5 Europe-shaped field
+    function europeShape(r, c, rows, cols) {
+        const nx = c / cols, ny = r / rows;
+        // Rough Europe mask
+        const cx = 0.45, cy = 0.45;
+        const inLand = Math.sqrt((nx - cx) ** 2 + (ny - cy) ** 2) < 0.42 + 0.08 * Math.sin(nx * 12) + 0.05 * Math.cos(ny * 8);
+        if (!inLand) return -1; // ocean
+        let v = 0.1 + 0.15 * Math.sin(nx * 5) * Math.cos(ny * 4);
+        // Po Valley hotspot
+        v += 0.5 * Math.exp(-((nx - 0.52) ** 2 + (ny - 0.62) ** 2) / 0.008);
+        // Paris
+        v += 0.3 * Math.exp(-((nx - 0.35) ** 2 + (ny - 0.42) ** 2) / 0.01);
+        // Silesia
+        v += 0.35 * Math.exp(-((nx - 0.58) ** 2 + (ny - 0.45) ** 2) / 0.008);
+        return Math.min(1, Math.max(0, v));
+    }
+
+    function pm25C(v) {
+        if (v < 0) return '#1a2332';
+        const r = Math.floor(30 + v * 225);
+        const g = Math.floor(100 + (1 - v) * 120 + v * 40);
+        const b = Math.floor(60 + (1 - v) * 140);
+        return `rgb(${Math.min(255,r)},${Math.min(255,g)},${Math.min(255,b)})`;
+    }
+
+    function resize() {
+        const rect = cvs.parentElement.getBoundingClientRect();
+        dpr = window.devicePixelRatio || 1;
+        W = rect.width; H = rect.height;
+        cvs.width = W * dpr; cvs.height = H * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, W, H);
+        const pad = 20;
+        const mapW = W - pad * 2, mapH = H - pad * 2;
+        const RES = 80; // grid resolution for drawing
+
+        // Draw base map
+        const cellW = mapW / RES, cellH = mapH / RES;
+        for (let r = 0; r < RES; r++) {
+            for (let c = 0; c < RES; c++) {
+                const v = europeShape(r, c, RES, RES);
+                ctx.fillStyle = pm25C(v);
+                ctx.fillRect(pad + c * cellW, pad + r * cellH, cellW + 0.5, cellH + 0.5);
+            }
+        }
+
+        const tileW = mapW / TILE_COLS, tileH = mapH / TILE_ROWS;
+
+        if (mode >= 1) {
+            // Draw tile grid
+            for (let ti = 0; ti < TILE_ROWS; ti++) {
+                for (let tj = 0; tj < TILE_COLS; tj++) {
+                    const idx = ti * TILE_COLS + tj;
+                    const tx = pad + tj * tileW, ty = pad + ti * tileH;
+                    let state = 'pending';
+                    if (mode === 2) {
+                        if (idx < Math.floor(animTile)) state = 'done';
+                        else if (idx === Math.floor(animTile)) state = 'current';
+                    }
+
+                    if (state === 'done') {
+                        ctx.strokeStyle = 'rgba(59, 130, 246, 0.6)';
+                        ctx.lineWidth = 1.5;
+                        ctx.fillStyle = 'rgba(59, 130, 246, 0.08)';
+                        ctx.fillRect(tx, ty, tileW, tileH);
+                    } else if (state === 'current') {
+                        ctx.strokeStyle = '#10b981';
+                        ctx.lineWidth = 2.5;
+                        ctx.shadowColor = '#10b981';
+                        ctx.shadowBlur = 12;
+                        ctx.fillStyle = 'rgba(16, 185, 129, 0.15)';
+                        ctx.fillRect(tx, ty, tileW, tileH);
+                        ctx.shadowBlur = 0;
+                    } else {
+                        ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+                        ctx.lineWidth = 1;
+                    }
+                    ctx.strokeRect(tx, ty, tileW, tileH);
+                    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+                    ctx.lineWidth = 1;
+                }
+            }
+
+            // Counter
+            const processed = mode === 2 ? Math.floor(animTile) : 0;
+            ctx.fillStyle = 'rgba(0,0,0,0.6)';
+            ctx.fillRect(W - 120, H - 40, 110, 30);
+            ctx.fillStyle = '#10b981';
+            ctx.font = 'bold 13px Inter, sans-serif';
+            ctx.textAlign = 'right';
+            ctx.fillText(`${Math.min(processed, TOTAL)} / ${TOTAL}`, W - 18, H - 20);
+        }
+
+        if (mode === 2) {
+            animTile += 0.35;
+            if (animTile > TOTAL + 10) animTile = 0;
+        }
+
+        animId = requestAnimationFrame(draw);
+    }
+
+    window.setTilingMode = function(m, btn) {
+        mode = m; animTile = 0;
+        btn.parentElement.querySelectorAll('.anim-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    };
+
+    resize();
+    window.addEventListener('resize', resize);
+    const obs = new IntersectionObserver(entries => {
+        if (entries[0].isIntersecting) { if (!animId) draw(); }
+        else { cancelAnimationFrame(animId); animId = null; }
+    }, { threshold: 0.05 });
+    obs.observe(cvs.parentElement);
+})();
+
+// ══════════════════════════════════════════════════════════
+// ── Animation 4: Delta Prediction ──
+// ══════════════════════════════════════════════════════════
+(function() {
+    const cvs = document.getElementById('cvsDelta');
+    const ctx = cvs.getContext('2d');
+    let W, H, dpr, animId;
+    let phase = 0, phaseT = 0; // 0=today, 1=delta, 2=prediction, 3=animate
+    let autoT = 0;
+
+    const N = 32;
+    const today = [], delta = [];
+    // Generate today's PM2.5
+    for (let i = 0; i < N; i++) {
+        today[i] = []; delta[i] = [];
+        for (let j = 0; j < N; j++) {
+            let v = 0.15 + 0.1 * Math.sin(i * 0.25) * Math.cos(j * 0.2);
+            v += 0.55 * Math.exp(-((i - 20) ** 2 + (j - 16) ** 2) / 20);
+            v += 0.3 * Math.exp(-((i - 10) ** 2 + (j - 24) ** 2) / 15);
+            today[i][j] = Math.min(1, Math.max(0, v));
+            // Delta: changes for tomorrow (some increase, some decrease)
+            let d = 0;
+            d += 0.25 * Math.exp(-((i - 22) ** 2 + (j - 18) ** 2) / 12); // increase near hotspot shift
+            d -= 0.2 * Math.exp(-((i - 20) ** 2 + (j - 14) ** 2) / 10); // decrease where it was
+            d += 0.15 * Math.exp(-((i - 8) ** 2 + (j - 26) ** 2) / 8);
+            d -= 0.1 * Math.exp(-((i - 12) ** 2 + (j - 22) ** 2) / 10);
+            delta[i][j] = Math.max(-0.4, Math.min(0.4, d));
+        }
+    }
+
+    function resize() {
+        const rect = cvs.parentElement.getBoundingClientRect();
+        dpr = window.devicePixelRatio || 1;
+        W = rect.width; H = rect.height;
+        cvs.width = W * dpr; cvs.height = H * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function pm25C(v) {
+        v = Math.min(1, Math.max(0, v));
+        const r = Math.floor(30 + v * 225);
+        const g = Math.floor(100 + (1 - v) * 120 + v * 40);
+        const b = Math.floor(60 + (1 - v) * 140);
+        return `rgb(${Math.min(255,r)},${Math.min(255,g)},${Math.min(255,b)})`;
+    }
+
+    function deltaC(d) {
+        if (d > 0) {
+            const t = Math.min(1, d / 0.3);
+            return `rgb(${Math.floor(60 + 195 * t)}, ${Math.floor(60 - 20 * t)}, ${Math.floor(60 - 20 * t)})`;
+        } else {
+            const t = Math.min(1, -d / 0.3);
+            return `rgb(${Math.floor(60 - 20 * t)}, ${Math.floor(60 + 50 * t)}, ${Math.floor(60 + 195 * t)})`;
+        }
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, W, H);
+        const pad = 20;
+        const cellW = (W - pad * 2) / N, cellH = (H - pad * 2) / N;
+
+        let blendT = 0;
+        if (phase === 3) {
+            autoT += 0.008;
+            blendT = (Math.sin(autoT * Math.PI * 2) + 1) / 2;
+        } else {
+            const target = phase === 0 ? 0 : (phase === 1 ? 0 : 1);
+            phaseT += (target - phaseT) * 0.05;
+            blendT = phaseT;
+        }
+
+        for (let i = 0; i < N; i++) {
+            for (let j = 0; j < N; j++) {
+                const x = pad + j * cellW, y = pad + i * cellH;
+
+                if (phase === 1 && blendT < 0.01) {
+                    // Show delta only
+                    ctx.fillStyle = deltaC(delta[i][j]);
+                } else {
+                    const v = today[i][j] + delta[i][j] * blendT;
+                    ctx.fillStyle = pm25C(v);
+                }
+                ctx.fillRect(x, y, cellW + 0.5, cellH + 0.5);
+            }
+        }
+
+        // Show delta overlay when in delta mode
+        if (phase === 1) {
+            for (let i = 0; i < N; i++) {
+                for (let j = 0; j < N; j++) {
+                    const x = pad + j * cellW, y = pad + i * cellH;
+                    ctx.fillStyle = deltaC(delta[i][j]);
+                    ctx.fillRect(x, y, cellW + 0.5, cellH + 0.5);
+                }
+            }
+        }
+
+        // Labels
+        ctx.fillStyle = 'rgba(0,0,0,0.6)';
+        ctx.fillRect(pad, pad, 120, 28);
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 12px Inter, sans-serif';
+        ctx.textAlign = 'left';
+        if (phase === 0) ctx.fillText('Today (y_t)', pad + 8, pad + 18);
+        else if (phase === 1) ctx.fillText('Residual (Δ)', pad + 8, pad + 18);
+        else if (phase === 2) ctx.fillText('Prediction (y_t + Δ)', pad + 8, pad + 18);
+        else {
+            const pct = Math.round(blendT * 100);
+            ctx.fillText(`Blend: ${pct}% Δ`, pad + 8, pad + 18);
+        }
+
+        // Formula overlay
+        if (phase === 3 || phase === 2) {
+            ctx.fillStyle = 'rgba(0,0,0,0.65)';
+            const fw = 220, fh = 32;
+            ctx.fillRect(W / 2 - fw / 2, H - pad - fh - 5, fw, fh);
+            ctx.fillStyle = '#10b981';
+            ctx.font = 'bold 13px JetBrains Mono, monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText('ŷ_{t+1} = y_t + Δ_θ', W / 2, H - pad - 14);
+        }
+
+        animId = requestAnimationFrame(draw);
+    }
+
+    window.setDeltaPhase = function(p, btn) {
+        phase = p; if (p !== 3) autoT = 0;
+        btn.parentElement.querySelectorAll('.anim-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    };
+
+    resize();
+    window.addEventListener('resize', resize);
+    const obs = new IntersectionObserver(entries => {
+        if (entries[0].isIntersecting) { if (!animId) draw(); }
+        else { cancelAnimationFrame(animId); animId = null; }
+    }, { threshold: 0.05 });
+    obs.observe(cvs.parentElement);
+})();
+
+// ══════════════════════════════════════════════════════════
+// ── Animation 5: Elevation-Aware Attention ──
+// ══════════════════════════════════════════════════════════
+(function() {
+    const cvs = document.getElementById('cvsElev');
+    const ctx = cvs.getContext('2d');
+    let W, H, dpr, animId;
+    let mode = 0; // 0=terrain, 1=attention, 2=particles
+
+    // Terrain profile (side view)
+    const NPTS = 120;
+    const terrain = [];
+    for (let i = 0; i < NPTS; i++) {
+        const x = i / NPTS;
+        let h = 0.3;
+        h += 0.35 * Math.exp(-((x - 0.35) ** 2) / 0.005); // Mountain 1
+        h += 0.45 * Math.exp(-((x - 0.65) ** 2) / 0.008); // Mountain 2 (taller)
+        h += 0.15 * Math.exp(-((x - 0.5) ** 2) / 0.003);  // Small peak
+        h += 0.05 * Math.sin(x * 30) * 0.03; // Noise
+        terrain[i] = Math.min(0.85, h);
+    }
+
+    // Particles
+    const particles = [];
+    const MAX_PARTICLES = 80;
+
+    function spawnParticle() {
+        if (particles.length >= MAX_PARTICLES) return;
+        // Spawn from emission sources (valleys/cities)
+        const sources = [0.15, 0.48, 0.82]; // valley positions
+        const sx = sources[Math.floor(Math.random() * sources.length)] + (Math.random() - 0.5) * 0.05;
+        const si = Math.floor(sx * NPTS);
+        const th = si >= 0 && si < NPTS ? terrain[si] : 0.3;
+        particles.push({
+            x: sx, y: 1 - th - 0.02 - Math.random() * 0.03,
+            vx: (Math.random() - 0.3) * 0.001,
+            vy: -Math.random() * 0.002 - 0.0005,
+            life: 1, decay: 0.002 + Math.random() * 0.002,
+            size: 2 + Math.random() * 3
+        });
+    }
+
+    function resize() {
+        const rect = cvs.parentElement.getBoundingClientRect();
+        dpr = window.devicePixelRatio || 1;
+        W = rect.width; H = rect.height;
+        cvs.width = W * dpr; cvs.height = H * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function getTerrainH(xNorm) {
+        const i = Math.floor(xNorm * NPTS);
+        if (i < 0 || i >= NPTS) return 0.3;
+        return terrain[Math.min(NPTS - 1, Math.max(0, i))];
+    }
+
+    function draw() {
+        const time = Date.now() / 1000;
+        ctx.clearRect(0, 0, W, H);
+        const pad = 20;
+        const plotW = W - pad * 2, plotH = H - pad * 2;
+
+        // Sky gradient
+        const skyGrad = ctx.createLinearGradient(0, 0, 0, H);
+        skyGrad.addColorStop(0, '#0c1929');
+        skyGrad.addColorStop(1, '#1a2744');
+        ctx.fillStyle = skyGrad;
+        ctx.fillRect(0, 0, W, H);
+
+        // Terrain fill
+        ctx.beginPath();
+        ctx.moveTo(pad, pad + plotH);
+        for (let i = 0; i < NPTS; i++) {
+            const x = pad + (i / NPTS) * plotW;
+            const y = pad + (1 - terrain[i]) * plotH;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.lineTo(pad + plotW, pad + plotH);
+        ctx.lineTo(pad, pad + plotH);
+        ctx.closePath();
+
+        const terrGrad = ctx.createLinearGradient(0, pad, 0, pad + plotH);
+        terrGrad.addColorStop(0, '#4a5568');
+        terrGrad.addColorStop(0.5, '#2d3748');
+        terrGrad.addColorStop(1, '#1a202c');
+        ctx.fillStyle = terrGrad;
+        ctx.fill();
+
+        // Terrain outline
+        ctx.beginPath();
+        for (let i = 0; i < NPTS; i++) {
+            const x = pad + (i / NPTS) * plotW;
+            const y = pad + (1 - terrain[i]) * plotH;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = '#718096';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Labels for valleys and peaks
+        ctx.font = '10px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        const labels = [{x: 0.15, t: 'Valley'}, {x: 0.35, t: 'Peak'}, {x: 0.48, t: 'Basin'}, {x: 0.65, t: 'Mountain'}, {x: 0.82, t: 'Plain'}];
+        labels.forEach(l => {
+            const px = pad + l.x * plotW;
+            const py = pad + (1 - getTerrainH(l.x)) * plotH - 10;
+            ctx.fillText(l.t, px, py);
+        });
+
+        // Emission sources (chimneys)
+        const sources = [0.15, 0.48, 0.82];
+        sources.forEach(sx => {
+            const px = pad + sx * plotW;
+            const py = pad + (1 - getTerrainH(sx)) * plotH;
+            ctx.fillStyle = '#f59e0b';
+            ctx.fillRect(px - 3, py - 12, 6, 12);
+            ctx.fillStyle = 'rgba(245, 158, 11, 0.3)';
+            ctx.beginPath();
+            ctx.arc(px, py - 16, 5 + 2 * Math.sin(time * 3), 0, Math.PI * 2);
+            ctx.fill();
+        });
+
+        // Mode 1: Attention flow arrows
+        if (mode >= 1) {
+            const queryPos = [0.15, 0.48, 0.82];
+            queryPos.forEach(qx => {
+                const qh = getTerrainH(qx);
+                for (let k = -6; k <= 6; k++) {
+                    if (k === 0) continue;
+                    const tx = qx + k * 0.04;
+                    if (tx < 0 || tx > 1) continue;
+                    const th = getTerrainH(tx);
+                    const elevDiff = th - qh;
+                    // B_elev = -alpha * ReLU(Ej - Ei)
+                    const penalty = Math.max(0, elevDiff);
+                    const attn = Math.exp(-penalty * 8);
+
+                    const x1 = pad + qx * plotW;
+                    const y1 = pad + (1 - qh) * plotH - 20;
+                    const x2 = pad + tx * plotW;
+                    const y2 = pad + (1 - th) * plotH - 20;
+
+                    const isUphill = elevDiff > 0.05;
+                    ctx.save();
+                    ctx.strokeStyle = isUphill
+                        ? `rgba(239, 68, 68, ${0.15 + 0.3 * (1 - attn)})`
+                        : `rgba(16, 185, 129, ${0.2 + 0.6 * attn})`;
+                    ctx.lineWidth = 1 + attn * 2;
+                    ctx.setLineDash(isUphill ? [4, 4] : []);
+                    ctx.beginPath();
+                    ctx.moveTo(x1, y1);
+                    ctx.lineTo(x2, y2);
+                    ctx.stroke();
+
+                    // Arrowhead
+                    const angle = Math.atan2(y2 - y1, x2 - x1);
+                    ctx.beginPath();
+                    ctx.moveTo(x2, y2);
+                    ctx.lineTo(x2 - 6 * Math.cos(angle - 0.4), y2 - 6 * Math.sin(angle - 0.4));
+                    ctx.lineTo(x2 - 6 * Math.cos(angle + 0.4), y2 - 6 * Math.sin(angle + 0.4));
+                    ctx.closePath();
+                    ctx.fillStyle = isUphill ? `rgba(239, 68, 68, ${0.3})` : `rgba(16, 185, 129, ${0.3 + 0.5 * attn})`;
+                    ctx.fill();
+                    ctx.restore();
+
+                    // Cross mark for blocked
+                    if (isUphill && penalty > 0.15) {
+                        ctx.strokeStyle = 'rgba(239, 68, 68, 0.5)';
+                        ctx.lineWidth = 2;
+                        const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+                        ctx.beginPath();
+                        ctx.moveTo(mx - 4, my - 4); ctx.lineTo(mx + 4, my + 4);
+                        ctx.moveTo(mx + 4, my - 4); ctx.lineTo(mx - 4, my + 4);
+                        ctx.stroke();
+                    }
+                }
+            });
+        }
+
+        // Mode 2: Particles
+        if (mode === 2) {
+            if (Math.random() < 0.3) spawnParticle();
+
+            for (let p = particles.length - 1; p >= 0; p--) {
+                const pt = particles[p];
+                // Physics: wind + gravity + terrain collision
+                pt.vx += (Math.random() - 0.45) * 0.0003; // slight eastward drift
+                pt.vy += 0.00005; // gravity
+                pt.x += pt.vx;
+                pt.y += pt.vy;
+
+                // Terrain collision
+                const th = 1 - getTerrainH(pt.x);
+                if (pt.y > th - 0.02) {
+                    pt.y = th - 0.02;
+                    pt.vy = -Math.abs(pt.vy) * 0.3;
+                    pt.vx *= 0.8;
+                    // Slide downhill
+                    const slope = (getTerrainH(pt.x + 0.01) - getTerrainH(pt.x - 0.01)) / 0.02;
+                    pt.vx -= slope * 0.0005;
+                }
+
+                pt.life -= pt.decay;
+                if (pt.life <= 0 || pt.x < 0 || pt.x > 1 || pt.y < 0) {
+                    particles.splice(p, 1);
+                    continue;
+                }
+
+                const px = pad + pt.x * plotW;
+                const py = pad + pt.y * plotH;
+                ctx.beginPath();
+                ctx.arc(px, py, pt.size * pt.life, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(245, 158, 11, ${pt.life * 0.7})`;
+                ctx.fill();
+            }
+        }
+
+        animId = requestAnimationFrame(draw);
+    }
+
+    window.setElevMode = function(m, btn) {
+        mode = m;
+        if (m !== 2) particles.length = 0;
+        btn.parentElement.querySelectorAll('.anim-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    };
+
+    resize();
+    window.addEventListener('resize', resize);
+    const obs = new IntersectionObserver(entries => {
+        if (entries[0].isIntersecting) { if (!animId) draw(); }
+        else { cancelAnimationFrame(animId); animId = null; }
+    }, { threshold: 0.05 });
+    obs.observe(cvs.parentElement);
+})();
+
+// ══════════════════════════════════════════════════════════
+// ── Animation 6: PixelShuffle Decoder ──
+// ══════════════════════════════════════════════════════════
+(function() {
+    const cvs = document.getElementById('cvsShuffle');
+    const ctx = cvs.getContext('2d');
+    let W, H, dpr, animId;
+    let stage = 0, stageT = 0; // 0-4 → 32,64,128,256,512
+
+    const stages = [
+        { res: 8, ch: 512, label: '32×32 · 512ch' },
+        { res: 16, ch: 256, label: '64×64 · 256ch' },
+        { res: 24, ch: 128, label: '128×128 · 128ch' },
+        { res: 32, ch: 64, label: '256×256 · 64ch' },
+        { res: 48, ch: 32, label: '512×512 · 32ch' },
+    ];
+
+    // Generate a base pattern that gets sharper at higher res
+    function getValue(r, c, res) {
+        const x = c / res, y = r / res;
+        let v = 0.15;
+        v += 0.5 * Math.exp(-((x - 0.6) ** 2 + (y - 0.65) ** 2) / (0.01 + 0.05 * (1 - res / 48)));
+        v += 0.3 * Math.exp(-((x - 0.3) ** 2 + (y - 0.35) ** 2) / (0.008 + 0.04 * (1 - res / 48)));
+        v += 0.2 * Math.exp(-((x - 0.75) ** 2 + (y - 0.25) ** 2) / (0.006 + 0.03 * (1 - res / 48)));
+        return Math.min(1, Math.max(0, v));
+    }
+
+    function resize() {
+        const rect = cvs.parentElement.getBoundingClientRect();
+        dpr = window.devicePixelRatio || 1;
+        W = rect.width; H = rect.height;
+        cvs.width = W * dpr; cvs.height = H * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function draw() {
+        stageT += (stage - stageT) * 0.06;
+        if (Math.abs(stageT - stage) < 0.01) stageT = stage;
+
+        ctx.clearRect(0, 0, W, H);
+        const pad = 30;
+        const sz = Math.min(W, H) - pad * 2;
+
+        // Interpolate between stages
+        const sIdx = Math.floor(stageT);
+        const frac = stageT - sIdx;
+        const s1 = stages[Math.min(sIdx, 4)];
+        const s2 = stages[Math.min(sIdx + 1, 4)];
+        const curRes = Math.round(s1.res + (s2.res - s1.res) * frac);
+
+        const cellSz = sz / curRes;
+
+        // Draw grid
+        for (let r = 0; r < curRes; r++) {
+            for (let c = 0; c < curRes; c++) {
+                const v = getValue(r, c, curRes);
+                const x = pad + c * cellSz;
+                const y = pad + r * cellSz;
+
+                // Color: purple (high channel) to green (low channel)
+                const chBlend = 1 - (s1.ch + (s2.ch - s1.ch) * frac - 32) / 480;
+                const cr = Math.floor(30 + v * 180 * (1 - chBlend) + v * 60 * chBlend);
+                const cg = Math.floor(40 + v * 60 * (1 - chBlend) + v * 200 * chBlend);
+                const cb = Math.floor(80 + v * 200 * (1 - chBlend) + v * 80 * chBlend);
+                ctx.fillStyle = `rgb(${cr},${cg},${cb})`;
+                ctx.fillRect(x, y, cellSz + 0.5, cellSz + 0.5);
+            }
+        }
+
+        // Grid lines
+        if (curRes <= 32) {
+            ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+            ctx.lineWidth = 0.5;
+            for (let i = 0; i <= curRes; i++) {
+                ctx.beginPath();
+                ctx.moveTo(pad + i * cellSz, pad);
+                ctx.lineTo(pad + i * cellSz, pad + sz);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(pad, pad + i * cellSz);
+                ctx.lineTo(pad + sz, pad + i * cellSz);
+                ctx.stroke();
+            }
+        }
+
+        // Label
+        ctx.fillStyle = 'rgba(0,0,0,0.65)';
+        ctx.fillRect(pad, pad, 160, 30);
+        ctx.fillStyle = '#10b981';
+        ctx.font = 'bold 12px Inter, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(s1.label + (frac > 0.1 ? ' → ' + s2.label : ''), pad + 8, pad + 19);
+
+        // Channel depth indicator bar
+        const barX = pad + sz + 8, barW = 12, barH = sz;
+        const chNorm = (s1.ch + (s2.ch - s1.ch) * frac) / 512;
+        ctx.fillStyle = 'rgba(255,255,255,0.05)';
+        ctx.fillRect(barX, pad, barW, barH);
+        const chGrad = ctx.createLinearGradient(0, pad + barH * (1 - chNorm), 0, pad + barH);
+        chGrad.addColorStop(0, '#8b5cf6');
+        chGrad.addColorStop(1, '#6d28d9');
+        ctx.fillStyle = chGrad;
+        ctx.fillRect(barX, pad + barH * (1 - chNorm), barW, barH * chNorm);
+        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(barX, pad, barW, barH);
+
+        ctx.save();
+        ctx.translate(barX + barW + 12, pad + barH / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillStyle = 'rgba(255,255,255,0.4)';
+        ctx.font = '10px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Channels', 0, 0);
+        ctx.restore();
+
+        // PixelShuffle arrow
+        if (frac > 0.1 && sIdx < 4) {
+            const arrowY = pad + sz + 16;
+            ctx.fillStyle = '#10b981';
+            ctx.font = '11px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('↑ PixelShuffle ×2', pad + sz / 2, arrowY);
+        }
+
+        animId = requestAnimationFrame(draw);
+    }
+
+    window.setShuffleStage = function(s, btn) {
+        stage = s;
+        btn.parentElement.querySelectorAll('.anim-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    };
+
+    resize();
+    window.addEventListener('resize', resize);
+    const obs = new IntersectionObserver(entries => {
+        if (entries[0].isIntersecting) { if (!animId) draw(); }
+        else { cancelAnimationFrame(animId); animId = null; }
+    }, { threshold: 0.05 });
+    obs.observe(cvs.parentElement);
+})();
+
+// ══════════════════════════════════════════════════════════
+// ── Animation 7: Pollution Transport Simulation ──
+// ══════════════════════════════════════════════════════════
+(function() {
+    const cvs = document.getElementById('cvsTransport');
+    const ctx = cvs.getContext('2d');
+    let W, H, dpr, animId;
+    let windMode = 0; // 0=west, 1=east, 2=calm
+    const particles = [];
+    const MAX_P = 250;
+
+    // Terrain (top-down simplified Europe with mountains)
+    const TRES = 100;
+    const terrainMap = [];
+    for (let i = 0; i < TRES; i++) {
+        terrainMap[i] = [];
+        for (let j = 0; j < TRES * 2; j++) {
+            const x = j / (TRES * 2), y = i / TRES;
+            let h = 0;
+            // Alps
+            h += 0.8 * Math.exp(-((x - 0.5) ** 2 / 0.008 + (y - 0.6) ** 2 / 0.01));
+            h += 0.6 * Math.exp(-((x - 0.55) ** 2 / 0.01 + (y - 0.55) ** 2 / 0.008));
+            // Carpathians
+            h += 0.5 * Math.exp(-((x - 0.7) ** 2 / 0.01 + (y - 0.45) ** 2 / 0.008));
+            // Pyrenees
+            h += 0.4 * Math.exp(-((x - 0.25) ** 2 / 0.015 + (y - 0.75) ** 2 / 0.005));
+            // Scandinavian mountains
+            h += 0.35 * Math.exp(-((x - 0.45) ** 2 / 0.005 + (y - 0.15) ** 2 / 0.02));
+            terrainMap[i][j] = Math.min(1, h);
+        }
+    }
+
+    // Emission sources (cities)
+    const sources = [
+        { x: 0.35, y: 0.45, label: 'Paris', rate: 0.4 },
+        { x: 0.55, y: 0.5, label: 'Milan', rate: 0.5 },
+        { x: 0.48, y: 0.65, label: 'Po Valley', rate: 0.6 },
+        { x: 0.65, y: 0.4, label: 'Silesia', rate: 0.45 },
+        { x: 0.6, y: 0.35, label: 'Berlin', rate: 0.3 },
+        { x: 0.42, y: 0.3, label: 'London', rate: 0.35 },
+    ];
+
+    // Concentration field (accumulator)
+    const CRES = 50;
+    const conc = [];
+    for (let i = 0; i < CRES; i++) {
+        conc[i] = [];
+        for (let j = 0; j < CRES * 2; j++) conc[i][j] = 0;
+    }
+
+    function getTerrainAt(x, y) {
+        const i = Math.floor(y * TRES), j = Math.floor(x * TRES * 2);
+        if (i < 0 || i >= TRES || j < 0 || j >= TRES * 2) return 0;
+        return terrainMap[i][j];
+    }
+
+    function getWind() {
+        if (windMode === 0) return { dx: 0.003, dy: 0.0005 }; // west → east
+        if (windMode === 1) return { dx: -0.003, dy: 0.0003 }; // east → west
+        return { dx: 0, dy: 0 }; // calm
+    }
+
+    function resize() {
+        const rect = cvs.parentElement.getBoundingClientRect();
+        dpr = window.devicePixelRatio || 1;
+        W = rect.width; H = rect.height;
+        cvs.width = W * dpr; cvs.height = H * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, W, H);
+
+        // Background
+        ctx.fillStyle = '#0c1929';
+        ctx.fillRect(0, 0, W, H);
+
+        const pad = 15;
+        const mw = W - pad * 2, mh = H - pad * 2;
+
+        // Draw terrain
+        const tcw = mw / (TRES * 2), tch = mh / TRES;
+        for (let i = 0; i < TRES; i++) {
+            for (let j = 0; j < TRES * 2; j++) {
+                const h = terrainMap[i][j];
+                if (h < 0.05) continue;
+                const v = Math.floor(40 + h * 80);
+                ctx.fillStyle = `rgb(${v - 10}, ${v}, ${v - 5})`;
+                ctx.fillRect(pad + j * tcw, pad + i * tch, tcw + 0.5, tch + 0.5);
+            }
+        }
+
+        // Draw concentration heatmap
+        const ccw = mw / (CRES * 2), cch = mh / CRES;
+        for (let i = 0; i < CRES; i++) {
+            for (let j = 0; j < CRES * 2; j++) {
+                const c = conc[i][j];
+                if (c < 0.01) continue;
+                const alpha = Math.min(0.7, c * 0.5);
+                const r = Math.floor(200 + c * 55);
+                const g = Math.floor(60 + c * 30);
+                const b = Math.floor(30);
+                ctx.fillStyle = `rgba(${Math.min(255,r)},${g},${b},${alpha})`;
+                ctx.fillRect(pad + j * ccw, pad + i * cch, ccw + 0.5, cch + 0.5);
+                conc[i][j] *= 0.995; // slow decay
+            }
+        }
+
+        // Spawn particles
+        const wind = getWind();
+        sources.forEach(s => {
+            if (particles.length < MAX_P && Math.random() < s.rate * 0.15) {
+                particles.push({
+                    x: s.x + (Math.random() - 0.5) * 0.02,
+                    y: s.y + (Math.random() - 0.5) * 0.02,
+                    vx: wind.dx * (0.5 + Math.random()),
+                    vy: wind.dy * (0.5 + Math.random()),
+                    life: 1, decay: 0.003 + Math.random() * 0.003,
+                    size: 2 + Math.random() * 2.5
+                });
+            }
+        });
+
+        // Update and draw particles
+        for (let p = particles.length - 1; p >= 0; p--) {
+            const pt = particles[p];
+            // Wind
+            pt.vx += wind.dx * 0.01 + (Math.random() - 0.5) * 0.0008;
+            pt.vy += wind.dy * 0.01 + (Math.random() - 0.5) * 0.0008;
+            // Terrain repulsion
+            const th = getTerrainAt(pt.x, pt.y);
+            if (th > 0.15) {
+                // Push away from mountains
+                const gx = getTerrainAt(pt.x + 0.01, pt.y) - getTerrainAt(pt.x - 0.01, pt.y);
+                const gy = getTerrainAt(pt.x, pt.y + 0.01) - getTerrainAt(pt.x, pt.y - 0.01);
+                pt.vx -= gx * 0.015;
+                pt.vy -= gy * 0.015;
+            }
+            pt.vx *= 0.97; pt.vy *= 0.97;
+            pt.x += pt.vx; pt.y += pt.vy;
+            pt.life -= pt.decay;
+
+            // Deposit to concentration grid
+            const ci = Math.floor(pt.y * CRES), cj = Math.floor(pt.x * CRES * 2);
+            if (ci >= 0 && ci < CRES && cj >= 0 && cj < CRES * 2) {
+                conc[ci][cj] = Math.min(2, conc[ci][cj] + 0.04 * pt.life);
+            }
+
+            if (pt.life <= 0 || pt.x < 0 || pt.x > 1 || pt.y < 0 || pt.y > 1) {
+                particles.splice(p, 1);
+                continue;
+            }
+
+            const px = pad + pt.x * mw;
+            const py = pad + pt.y * mh;
+            ctx.beginPath();
+            ctx.arc(px, py, pt.size * pt.life, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(239, 68, 68, ${pt.life * 0.6})`;
+            ctx.fill();
+        }
+
+        // Draw emission sources
+        const time = Date.now() / 1000;
+        sources.forEach(s => {
+            const sx = pad + s.x * mw;
+            const sy = pad + s.y * mh;
+            const pulse = 3 + 1.5 * Math.sin(time * 2 + s.x * 10);
+            ctx.beginPath();
+            ctx.arc(sx, sy, pulse, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(245, 158, 11, 0.8)';
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(sx, sy, pulse + 4, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(245, 158, 11, 0.3)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            // Label
+            ctx.fillStyle = 'rgba(255,255,255,0.6)';
+            ctx.font = '9px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(s.label, sx, sy - pulse - 6);
+        });
+
+        // Wind indicator
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.fillRect(W - 95, 8, 85, 28);
+        ctx.fillStyle = '#10b981';
+        ctx.font = 'bold 11px Inter, sans-serif';
+        ctx.textAlign = 'right';
+        const wLabels = ['West →', '← East', 'Calm ○'];
+        ctx.fillText('Wind: ' + wLabels[windMode], W - 14, 27);
+
+        animId = requestAnimationFrame(draw);
+    }
+
+    window.setTransportWind = function(m, btn) {
+        windMode = m;
+        btn.parentElement.querySelectorAll('.anim-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    };
+
+    window.resetTransport = function(btn) {
+        particles.length = 0;
+        for (let i = 0; i < CRES; i++)
+            for (let j = 0; j < CRES * 2; j++) conc[i][j] = 0;
     };
 
     resize();
