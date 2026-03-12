@@ -11,20 +11,20 @@
         onload="renderMathInElement(document.body, {delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
     <style>
         :root {
-            --primary: #059669;
-            --primary-dark: #047857;
-            --accent: #10b981;
-            --accent-light: #d1fae5;
-            --dark: #0f172a;
-            --dark2: #1e293b;
+            --primary: #009736;
+            --primary-dark: #007a2d;
+            --accent: #CE1126;
+            --accent-light: #fce4ec;
+            --dark: #1a1a1a;
+            --dark2: #2a2a2a;
             --gray: #64748b;
             --gray-light: #94a3b8;
             --light: #f8fafc;
             --white: #ffffff;
             --border: #e2e8f0;
-            --gradient: linear-gradient(135deg, #047857 0%, #059669 50%, #10b981 100%);
-            --gradient-warm: linear-gradient(135deg, #059669 0%, #0d9488 50%, #0ea5e9 100%);
-            --gradient-dark: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            --gradient: linear-gradient(135deg, #007a2d 0%, #009736 50%, #CE1126 100%);
+            --gradient-warm: linear-gradient(135deg, #009736 0%, #CE1126 50%, #1a1a1a 100%);
+            --gradient-dark: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
             --shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
             --shadow-lg: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
             --shadow-xl: 0 25px 50px -12px rgba(0,0,0,0.25);
@@ -626,18 +626,20 @@
         <a href="#" class="logo">
             <span class="logo-icon">
                 <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect width="40" height="40" rx="8" fill="url(#logoGrad)"/>
-                    <circle cx="14" cy="20" r="6" stroke="white" stroke-width="2" fill="none" opacity="0.7"/>
-                    <circle cx="26" cy="20" r="6" stroke="white" stroke-width="2" fill="none" opacity="0.7"/>
-                    <line x1="20" y1="14" x2="20" y2="26" stroke="white" stroke-width="2" opacity="0.5"/>
-                    <circle cx="20" cy="12" r="2" fill="white" opacity="0.9"/>
-                    <circle cx="20" cy="28" r="2" fill="white" opacity="0.9"/>
-                    <defs>
-                        <linearGradient id="logoGrad" x1="0" y1="0" x2="40" y2="40">
-                            <stop offset="0%" stop-color="#047857"/>
-                            <stop offset="100%" stop-color="#10b981"/>
-                        </linearGradient>
-                    </defs>
+                    <!-- Cross-Resolution: coarse grid (green) -->
+                    <rect x="2" y="2" width="36" height="36" rx="6" fill="#1a1a1a"/>
+                    <rect x="4" y="4" width="15" height="15" rx="2" fill="#009736" opacity="0.85"/>
+                    <rect x="21" y="4" width="15" height="15" rx="2" fill="#009736" opacity="0.55"/>
+                    <rect x="4" y="21" width="15" height="15" rx="2" fill="#009736" opacity="0.55"/>
+                    <rect x="21" y="21" width="15" height="15" rx="2" fill="#009736" opacity="0.35"/>
+                    <!-- Fine sub-grid (red) in top-left -->
+                    <rect x="5" y="5" width="6" height="6" rx="1" fill="#CE1126" opacity="0.9"/>
+                    <rect x="12" y="5" width="6" height="6" rx="1" fill="#CE1126" opacity="0.6"/>
+                    <rect x="5" y="12" width="6" height="6" rx="1" fill="#CE1126" opacity="0.6"/>
+                    <rect x="12" y="12" width="6" height="6" rx="1" fill="#CE1126" opacity="0.4"/>
+                    <!-- Cross-attention arrow -->
+                    <line x1="19" y1="11" x2="26" y2="11" stroke="white" stroke-width="1.5" stroke-dasharray="2 1.5"/>
+                    <polygon points="26,9 29,11 26,13" fill="white" opacity="0.8"/>
                 </svg>
             </span>
             CRAN-PM
@@ -771,7 +773,7 @@
                 </div>
                 <div class="anim-legend">
                     <span><span class="dot" style="background:#f59e0b"></span>Global (25 km)</span>
-                    <span><span class="dot" style="background:#10b981"></span>Local (1 km)</span>
+                    <span><span class="dot" style="background:#009736"></span>Local (1 km)</span>
                     <span><span class="dot" style="background:#ef4444"></span>Cross-Attention</span>
                 </div>
             </div>
@@ -816,7 +818,7 @@
                     <button class="anim-btn" onclick="setElevMode(2, this)">Particles</button>
                 </div>
                 <div class="anim-legend">
-                    <span><span class="dot" style="background:#10b981"></span>Allowed (downhill)</span>
+                    <span><span class="dot" style="background:#009736"></span>Allowed (downhill)</span>
                     <span><span class="dot" style="background:#ef4444"></span>Penalised (uphill)</span>
                     <span><span class="dot" style="background:#f59e0b"></span>Pollution</span>
                 </div>
@@ -840,7 +842,7 @@
                 </div>
                 <div class="anim-legend">
                     <span><span class="dot" style="background:#8b5cf6"></span>Channel depth</span>
-                    <span><span class="dot" style="background:#10b981"></span>Spatial resolution</span>
+                    <span><span class="dot" style="background:#009736"></span>Spatial resolution</span>
                 </div>
             </div>
         </div>
@@ -1341,7 +1343,7 @@
 // ── Floating particles ──
 (function() {
     const container = document.getElementById('particles');
-    const colors = ['#059669', '#10b981', '#34d399', '#6ee7b7', '#0d9488'];
+    const colors = ['#009736', '#CE1126', '#1a1a1a', '#ffffff', '#007a2d'];
     for (let i = 0; i < 30; i++) {
         const p = document.createElement('div');
         p.className = 'particle';
@@ -1524,15 +1526,15 @@ function copyCitation() {
 
             // Glow effect
             ctx.save();
-            ctx.shadowColor = '#10b981';
+            ctx.shadowColor = '#009736';
             ctx.shadowBlur = 15 * alpha;
-            ctx.strokeStyle = `rgba(16, 185, 129, ${alpha})`;
+            ctx.strokeStyle = `rgba(0, 151, 54, ${alpha})`;
             ctx.lineWidth = 3;
             ctx.strokeRect(px, py, pw, ph);
             ctx.restore();
 
             // Fine grid lines inside
-            ctx.strokeStyle = `rgba(16, 185, 129, ${alpha * 0.7})`;
+            ctx.strokeStyle = `rgba(0, 151, 54, ${alpha * 0.7})`;
             ctx.lineWidth = 1;
             for (let k = 0; k <= 4; k++) {
                 for (let sub = 1; sub < 4; sub++) {
@@ -1557,7 +1559,7 @@ function copyCitation() {
 
             // Label "1 km tiles"
             ctx.font = `bold ${Math.max(10, gw * 0.7)}px Inter, sans-serif`;
-            ctx.fillStyle = `rgba(16, 185, 129, ${alpha})`;
+            ctx.fillStyle = `rgba(0, 151, 54, ${alpha})`;
             ctx.textAlign = 'center';
             ctx.fillText('1 km tiles', px + pw / 2, py - 8);
         }
@@ -1610,7 +1612,7 @@ function copyCitation() {
             const pr = 6 + 3 * Math.sin(time * 3);
             ctx.beginPath();
             ctx.arc(cx, cy, pr, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(16, 185, 129, ${alpha})`;
+            ctx.fillStyle = `rgba(0, 151, 54, ${alpha})`;
             ctx.fill();
             ctx.font = `bold ${Math.max(9, gw * 0.55)}px Inter, sans-serif`;
             ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
@@ -1867,7 +1869,7 @@ function copyCitation() {
         ctx.beginPath();
         ctx.moveTo(indX - aDx * 0.5, indY - aDy * 0.5);
         ctx.lineTo(indX + aDx, indY + aDy);
-        ctx.strokeStyle = '#10b981';
+        ctx.strokeStyle = '#009736';
         ctx.lineWidth = 2.5;
         ctx.stroke();
         // Arrowhead
@@ -1877,7 +1879,7 @@ function copyCitation() {
         ctx.lineTo(indX + aDx - 8 * Math.cos(aAngle - 0.5), indY + aDy - 8 * Math.sin(aAngle - 0.5));
         ctx.lineTo(indX + aDx - 8 * Math.cos(aAngle + 0.5), indY + aDy - 8 * Math.sin(aAngle + 0.5));
         ctx.closePath();
-        ctx.fillStyle = '#10b981';
+        ctx.fillStyle = '#009736';
         ctx.fill();
 
         // Label
@@ -2065,7 +2067,7 @@ function copyCitation() {
                     ctx.save();
                     ctx.strokeStyle = isUphill
                         ? `rgba(239, 68, 68, ${0.15 + 0.3 * (1 - attn)})`
-                        : `rgba(16, 185, 129, ${0.2 + 0.6 * attn})`;
+                        : `rgba(0, 151, 54, ${0.2 + 0.6 * attn})`;
                     ctx.lineWidth = 1 + attn * 2;
                     ctx.setLineDash(isUphill ? [4, 4] : []);
                     ctx.beginPath();
@@ -2080,7 +2082,7 @@ function copyCitation() {
                     ctx.lineTo(x2 - 6 * Math.cos(angle - 0.4), y2 - 6 * Math.sin(angle - 0.4));
                     ctx.lineTo(x2 - 6 * Math.cos(angle + 0.4), y2 - 6 * Math.sin(angle + 0.4));
                     ctx.closePath();
-                    ctx.fillStyle = isUphill ? `rgba(239, 68, 68, ${0.3})` : `rgba(16, 185, 129, ${0.3 + 0.5 * attn})`;
+                    ctx.fillStyle = isUphill ? `rgba(239, 68, 68, ${0.3})` : `rgba(0, 151, 54, ${0.3 + 0.5 * attn})`;
                     ctx.fill();
                     ctx.restore();
 
@@ -2243,7 +2245,7 @@ function copyCitation() {
         // Label
         ctx.fillStyle = 'rgba(0,0,0,0.65)';
         ctx.fillRect(pad, pad, 160, 30);
-        ctx.fillStyle = '#10b981';
+        ctx.fillStyle = '#009736';
         ctx.font = 'bold 12px Inter, sans-serif';
         ctx.textAlign = 'left';
         ctx.fillText(s1.label + (frac > 0.1 ? ' → ' + s2.label : ''), pad + 8, pad + 19);
@@ -2274,7 +2276,7 @@ function copyCitation() {
         // PixelShuffle arrow
         if (frac > 0.1 && sIdx < 4) {
             const arrowY = pad + sz + 16;
-            ctx.fillStyle = '#10b981';
+            ctx.fillStyle = '#009736';
             ctx.font = '11px Inter, sans-serif';
             ctx.textAlign = 'center';
             ctx.fillText('↑ PixelShuffle ×2', pad + sz / 2, arrowY);
@@ -2309,7 +2311,7 @@ window.addEventListener('scroll', () => {
         const link = document.querySelector(`.nav-links a[href="#${id}"]`);
         if (link) {
             if (scrollY >= top && scrollY < top + height) {
-                link.style.color = '#059669';
+                link.style.color = '#009736';
             } else {
                 link.style.color = '';
             }
