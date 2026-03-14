@@ -839,8 +839,8 @@
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5"/><path d="M21 3l-7 7"/><path d="M8 21H3v-5"/><path d="M3 21l7-7"/></svg>
                     5 &middot; Wind-Driven Patch Reordering
                 </h3>
-                <p>PM2.5 concentration patches over the Iberian Peninsula are reordered along the wind direction before entering the transformer. Upwind patches are processed first, encoding causal pollutant transport. Change the wind to watch patches physically rearrange.</p>
-                <div class="anim-canvas-wrap">
+                <p>PM2.5 prediction patches across Europe are reordered along the wind direction before entering the transformer. Each regional patch is processed upwind-first, encoding causal pollutant transport. Change the wind to watch patches physically rearrange.</p>
+                <div class="anim-canvas-wrap" style="aspect-ratio: 5/3;">
                     <canvas id="cvsReorder" width="600" height="360"></canvas>
                 </div>
                 <div class="anim-controls">
@@ -2288,8 +2288,8 @@ function copyCitation() {
     let rotating = false;
     let showOriginal = false; // "Original Grid" mode
 
-    // Grid: 8x5 patches over Europe (matching map aspect ~1.67:1)
-    const COLS = 8, ROWS = 5;
+    // Grid: 16x10 patches over Europe — regional reordering, not coarse blocks
+    const COLS = 16, ROWS = 10;
     const NTOK = COLS * ROWS;
 
     const patches = [];
@@ -2355,12 +2355,12 @@ function copyCitation() {
             ctx.fillRect(0, 0, W, H);
         }
 
-        // Patch layout
-        const padX = 30, padY = 30;
+        // Patch layout — tight for fine grid
+        const padX = 12, padY = 12;
         const cellW = (W - padX * 2) / COLS;
         const cellH = (H - padY * 2) / ROWS;
-        const patchW = cellW * 0.88;
-        const patchH = cellH * 0.88;
+        const patchW = cellW * 0.92;
+        const patchH = cellH * 0.92;
 
         const gridSlots = [];
         for (let r = 0; r < ROWS; r++) {
@@ -2426,15 +2426,15 @@ function copyCitation() {
             const upwindness = 1 - r_rank / (NTOK - 1);
 
             // Shadow
-            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.fillStyle = 'rgba(0,0,0,0.35)';
             ctx.beginPath();
-            ctx.roundRect(px - patchW/2 + 3, py - patchH/2 + 3, patchW, patchH, 5);
+            ctx.roundRect(px - patchW/2 + 1.5, py - patchH/2 + 1.5, patchW, patchH, 3);
             ctx.fill();
 
             // Clip and draw real map crop
             ctx.save();
             ctx.beginPath();
-            ctx.roundRect(px - patchW/2, py - patchH/2, patchW, patchH, 5);
+            ctx.roundRect(px - patchW/2, py - patchH/2, patchW, patchH, 3);
             ctx.clip();
 
             if (bgReady) {
@@ -2452,23 +2452,23 @@ function copyCitation() {
             const bG = Math.floor(165 * upwindness + 100 * (1 - upwindness));
             const bB = Math.floor(233 * upwindness + 80 * (1 - upwindness));
             ctx.strokeStyle = `rgba(${bR},${bG},${bB},${0.3 + upwindness * 0.7})`;
-            ctx.lineWidth = 1.5 + upwindness * 1.5;
+            ctx.lineWidth = 0.8 + upwindness * 1.0;
             ctx.beginPath();
-            ctx.roundRect(px - patchW/2, py - patchH/2, patchW, patchH, 5);
+            ctx.roundRect(px - patchW/2, py - patchH/2, patchW, patchH, 3);
             ctx.stroke();
 
-            // Rank badge (hide in original mode)
-            if (!showOriginal) {
-            const badgeR = Math.max(10, patchW * 0.16);
-            ctx.fillStyle = `rgba(0,0,0,${0.5 + upwindness * 0.3})`;
+            // Rank badge — only show every 10th to avoid clutter on fine grid
+            if (!showOriginal && (r_rank % 20 === 0 || r_rank === NTOK - 1)) {
+            const badgeR = Math.max(7, patchW * 0.22);
+            ctx.fillStyle = `rgba(0,0,0,${0.6 + upwindness * 0.3})`;
             ctx.beginPath();
-            ctx.arc(px - patchW/2 + badgeR + 3, py - patchH/2 + badgeR + 3, badgeR, 0, Math.PI * 2);
+            ctx.arc(px - patchW/2 + badgeR + 2, py - patchH/2 + badgeR + 2, badgeR, 0, Math.PI * 2);
             ctx.fill();
-            ctx.fillStyle = `rgba(255,255,255,${0.6 + upwindness * 0.4})`;
-            ctx.font = `bold ${Math.max(9, badgeR * 1.1)}px JetBrains Mono, monospace`;
+            ctx.fillStyle = `rgba(255,255,255,${0.7 + upwindness * 0.3})`;
+            ctx.font = `bold ${Math.max(7, badgeR * 1.0)}px JetBrains Mono, monospace`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText(r_rank + 1, px - patchW/2 + badgeR + 3, py - patchH/2 + badgeR + 3);
+            ctx.fillText(r_rank + 1, px - patchW/2 + badgeR + 2, py - patchH/2 + badgeR + 2);
             }
         }
 
