@@ -841,9 +841,10 @@
                 </h3>
                 <p>PM2.5 concentration patches over the Iberian Peninsula are reordered along the wind direction before entering the transformer. Upwind patches are processed first, encoding causal pollutant transport. Change the wind to watch patches physically rearrange.</p>
                 <div class="anim-canvas-wrap">
-                    <canvas id="cvsReorder" width="600" height="600"></canvas>
+                    <canvas id="cvsReorder" width="600" height="360"></canvas>
                 </div>
                 <div class="anim-controls">
+                    <button class="anim-btn" onclick="setReorderWind(-1, this)">Original Grid</button>
                     <button class="anim-btn active" onclick="setReorderWind(0, this)">West Wind &rarr;</button>
                     <button class="anim-btn" onclick="setReorderWind(1, this)">North Wind &darr;</button>
                     <button class="anim-btn" onclick="setReorderWind(2, this)">South-East &nwarr;</button>
@@ -2285,6 +2286,7 @@ function copyCitation() {
     let windAngle = Math.PI;
     let targetAngle = Math.PI;
     let rotating = false;
+    let showOriginal = false; // "Original Grid" mode
 
     // Grid: 8x5 patches over Europe (matching map aspect ~1.67:1)
     const COLS = 8, ROWS = 5;
@@ -2370,7 +2372,7 @@ function copyCitation() {
             }
         }
 
-        const order = getOrder(windAngle);
+        const order = showOriginal ? Array.from({length: NTOK}, (_, i) => i) : getOrder(windAngle);
         const rank = new Array(NTOK);
         for (let i = 0; i < NTOK; i++) rank[order[i]] = i;
 
@@ -2455,7 +2457,8 @@ function copyCitation() {
             ctx.roundRect(px - patchW/2, py - patchH/2, patchW, patchH, 5);
             ctx.stroke();
 
-            // Rank badge
+            // Rank badge (hide in original mode)
+            if (!showOriginal) {
             const badgeR = Math.max(10, patchW * 0.16);
             ctx.fillStyle = `rgba(0,0,0,${0.5 + upwindness * 0.3})`;
             ctx.beginPath();
@@ -2466,9 +2469,23 @@ function copyCitation() {
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(r_rank + 1, px - patchW/2 + badgeR + 3, py - patchH/2 + badgeR + 3);
+            }
         }
 
-        // Wind compass
+        // Wind compass (hide in original mode)
+        if (showOriginal) {
+            // Show "Original Grid" label instead
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.beginPath();
+            ctx.roundRect(10, 4, 110, 28, 8);
+            ctx.fill();
+            ctx.font = 'bold 11px Inter, sans-serif';
+            ctx.fillStyle = 'rgba(255,255,255,0.7)';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('Original Grid', 65, 18);
+        }
+        if (!showOriginal) {
         const indX = 30, indY = 18;
         ctx.fillStyle = 'rgba(0,0,0,0.5)';
         ctx.beginPath();
@@ -2495,6 +2512,7 @@ function copyCitation() {
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
         ctx.fillText('Wind', indX + aLen + 4, indY);
+        }
 
         // Label
         ctx.fillStyle = 'rgba(0,0,0,0.5)';
@@ -2515,8 +2533,17 @@ function copyCitation() {
     window.setReorderWind = function(idx, btn) {
         btn.parentElement.querySelectorAll('.anim-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        if (idx === 3) { rotating = true; }
-        else { rotating = false; targetAngle = windPresets[idx]; }
+        if (idx === -1) {
+            showOriginal = true;
+            rotating = false;
+        } else if (idx === 3) {
+            showOriginal = false;
+            rotating = true;
+        } else {
+            showOriginal = false;
+            rotating = false;
+            targetAngle = windPresets[idx];
+        }
     };
 
     resize();
