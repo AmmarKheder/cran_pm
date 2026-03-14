@@ -2266,8 +2266,9 @@ function copyCitation() {
     obs.observe(cvs.parentElement);
 })();
 
+
 // ══════════════════════════════════════════════════════════
-// ── Animation 5: Wind-Driven Patch Reordering (Map) ──
+// ── Animation 5: Wind-Driven Patch Reordering (Real Map) ──
 // ══════════════════════════════════════════════════════════
 (function() {
     const cvs = document.getElementById('cvsReorder');
@@ -2275,79 +2276,25 @@ function copyCitation() {
     const ctx = cvs.getContext('2d');
     let W, H, dpr, animId;
 
-    // Map bounds: lon [-11, 5], lat [35, 45] — Iberian Peninsula
-    const LON0 = -11, LON1 = 5, LAT0 = 35, LAT1 = 45;
-    const LONW = LON1 - LON0, LATH = LAT1 - LAT0;
+    // Load real CRAN-PM prediction map as background
+    const bgImg = new Image();
+    bgImg.src = 'assets/figures/pm25_europe_cranpm.jpg';
+    let bgReady = false;
+    bgImg.onload = () => { bgReady = true; };
 
     let windAngle = Math.PI;
     let targetAngle = Math.PI;
     let rotating = false;
 
-    // Convert geo coords to canvas coords
-    function geo2px(lon, lat) {
-        return {
-            x: ((lon - LON0) / LONW) * W,
-            y: (1 - (lat - LAT0) / LATH) * H
-        };
-    }
-
-    // Simplified Iberian Peninsula coastline (lon, lat pairs)
-    const iberia = [
-        [-9.5,37.0],[-8.9,36.85],[-7.4,37.0],[-6.9,37.2],[-6.3,36.5],
-        [-5.6,36.0],[-5.3,36.1],[-4.4,36.7],[-3.7,36.7],[-2.2,36.7],
-        [-1.6,37.0],[-0.8,37.6],[-0.5,38.0],[-0.2,38.7],[0.0,39.5],
-        [0.2,40.5],[0.8,40.8],[1.3,41.1],[2.0,41.3],[2.8,41.6],
-        [3.2,42.4],[3.0,42.7],[1.8,42.8],[0.7,42.9],[-0.3,42.8],
-        [-1.0,43.0],[-1.8,43.3],[-2.5,43.4],[-3.5,43.5],[-4.5,43.5],
-        [-5.5,43.5],[-6.2,43.5],[-7.0,43.5],[-7.6,43.7],[-8.3,43.3],
-        [-8.9,42.5],[-8.8,42.0],[-8.9,41.2],[-8.8,40.5],[-9.0,39.5],
-        [-9.5,38.8],[-9.5,38.0],[-9.5,37.0]
-    ];
-
-    // Balearic Islands (simplified)
-    const mallorca = [[2.3,39.2],[2.8,39.5],[3.5,39.8],[4.3,39.9],[4.4,39.6],[3.8,39.3],[3.0,39.1],[2.3,39.2]];
-
-    // Morocco north coast
-    const morocco = [[-5.9,35.8],[-5.3,35.9],[-4.0,35.2],[-2.9,35.1],[-2.2,35.0],[-1.0,35.0],[0.0,35.5],[1.0,35.8],[2.0,36.0],[3.5,36.5],[5.0,36.8]];
-
-    // France south coast
-    const france = [[3.2,42.4],[3.5,42.5],[4.0,43.0],[4.5,43.3],[5.0,43.3]];
-
-    // Grid of PM2.5 patches
-    const COLS = 7, ROWS = 7;
+    // Grid: 8x5 patches over Europe (matching map aspect ~1.67:1)
+    const COLS = 8, ROWS = 5;
     const NTOK = COLS * ROWS;
-    const patches = [];
 
-    // Madrid ~ (-3.7, 40.4), Barcelona ~ (2.2, 41.4)
+    const patches = [];
     for (let r = 0; r < ROWS; r++) {
         for (let c = 0; c < COLS; c++) {
-            // Map grid to geo coords (within a sub-region of the map)
-            const lon = -9 + c * (12 / (COLS - 1));
-            const lat = 44 - r * (8 / (ROWS - 1));
-
-            // PM2.5 field — hotspots near Madrid, Barcelona, Porto
-            let v = 0.08;
-            // Madrid hotspot
-            const dMad = Math.sqrt((lon + 3.7) ** 2 + (lat - 40.4) ** 2);
-            v += 0.7 * Math.exp(-dMad * dMad / 3);
-            // Barcelona
-            const dBar = Math.sqrt((lon - 2.2) ** 2 + (lat - 41.4) ** 2);
-            v += 0.5 * Math.exp(-dBar * dBar / 2.5);
-            // Lisbon/Porto industrial
-            const dLis = Math.sqrt((lon + 8.5) ** 2 + (lat - 39.5) ** 2);
-            v += 0.35 * Math.exp(-dLis * dLis / 2);
-            // Valencia
-            const dVal = Math.sqrt((lon + 0.3) ** 2 + (lat - 39.5) ** 2);
-            v += 0.3 * Math.exp(-dVal * dVal / 2);
-            // Background gradient (lower at coasts)
-            v += 0.05 * Math.sin(lon * 0.5) * Math.cos(lat * 0.3);
-
-            v = Math.min(1, Math.max(0, v));
-
             patches.push({
                 gridR: r, gridC: c, id: r * COLS + c,
-                lon: lon, lat: lat,
-                value: v,
                 dispX: 0, dispY: 0,
                 targetX: 0, targetY: 0,
                 initialized: false
@@ -2355,68 +2302,13 @@ function copyCitation() {
         }
     }
 
-    // RdYlBu_r colormap (blue=low → yellow=mid → red=high)
-    function rdylbu_r(v) {
-        v = Math.max(0, Math.min(1, v));
-        let r, g, b;
-        if (v < 0.25) {
-            const t = v / 0.25;
-            r = Math.floor(49 + t * (116 - 49));
-            g = Math.floor(54 + t * (173 - 54));
-            b = Math.floor(149 + t * (209 - 149));
-        } else if (v < 0.5) {
-            const t = (v - 0.25) / 0.25;
-            r = Math.floor(116 + t * (254 - 116));
-            g = Math.floor(173 + t * (224 - 173));
-            b = Math.floor(209 + t * (144 - 209));
-        } else if (v < 0.75) {
-            const t = (v - 0.5) / 0.25;
-            r = Math.floor(254 + t * (244 - 254));
-            g = Math.floor(224 + t * (109 - 224));
-            b = Math.floor(144 + t * (67 - 144));
-        } else {
-            const t = (v - 0.75) / 0.25;
-            r = Math.floor(244 + t * (165 - 244));
-            g = Math.floor(109 + t * (0 - 109));
-            b = Math.floor(67 + t * (38 - 67));
-        }
-        return `rgb(${r},${g},${b})`;
-    }
-
-    function rdylbu_r_a(v, a) {
-        v = Math.max(0, Math.min(1, v));
-        let r, g, b;
-        if (v < 0.25) {
-            const t = v / 0.25;
-            r = Math.floor(49 + t * (116 - 49));
-            g = Math.floor(54 + t * (173 - 54));
-            b = Math.floor(149 + t * (209 - 149));
-        } else if (v < 0.5) {
-            const t = (v - 0.25) / 0.25;
-            r = Math.floor(116 + t * (254 - 116));
-            g = Math.floor(173 + t * (224 - 173));
-            b = Math.floor(209 + t * (144 - 209));
-        } else if (v < 0.75) {
-            const t = (v - 0.5) / 0.25;
-            r = Math.floor(254 + t * (244 - 254));
-            g = Math.floor(224 + t * (109 - 224));
-            b = Math.floor(144 + t * (67 - 144));
-        } else {
-            const t = (v - 0.75) / 0.25;
-            r = Math.floor(244 + t * (165 - 244));
-            g = Math.floor(109 + t * (0 - 109));
-            b = Math.floor(67 + t * (38 - 67));
-        }
-        return `rgba(${r},${g},${b},${a})`;
-    }
-
     function getOrder(angle) {
         const dx = Math.cos(angle);
-        const dy = Math.sin(angle); // lat increases = up = wind from north blows south
+        const dy = -Math.sin(angle);
         const indices = Array.from({length: NTOK}, (_, i) => i);
         indices.sort((a, b) => {
-            const projA = patches[a].lon * dx + patches[a].lat * dy;
-            const projB = patches[b].lon * dx + patches[b].lat * dy;
+            const projA = patches[a].gridC * dx + patches[a].gridR * dy;
+            const projB = patches[b].gridC * dx + patches[b].gridR * dy;
             return projA - projB;
         });
         return indices;
@@ -2425,26 +2317,12 @@ function copyCitation() {
     function resize() {
         const rect = cvs.parentElement.getBoundingClientRect();
         dpr = window.devicePixelRatio || 1;
-        const size = Math.min(rect.width, rect.height);
-        W = size; H = size;
+        W = rect.width; H = rect.width * 0.6;
         cvs.width = W * dpr; cvs.height = H * dpr;
         cvs.style.width = W + 'px';
         cvs.style.height = H + 'px';
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        // Reset patch positions on resize
-        patches.forEach(p => p.initialized = false);
-    }
-
-    function drawCoastline(coords, close) {
-        if (coords.length < 2) return;
-        ctx.beginPath();
-        const p0 = geo2px(coords[0][0], coords[0][1]);
-        ctx.moveTo(p0.x, p0.y);
-        for (let i = 1; i < coords.length; i++) {
-            const p = geo2px(coords[i][0], coords[i][1]);
-            ctx.lineTo(p.x, p.y);
-        }
-        if (close) ctx.closePath();
+        patches.forEach(p => { p.initialized = false; });
     }
 
     let lastTime = Date.now() / 1000;
@@ -2454,7 +2332,6 @@ function copyCitation() {
         const dt = Math.min(now - lastTime, 0.05);
         lastTime = now;
 
-        // Smooth wind
         if (rotating) {
             windAngle += 0.012;
         } else {
@@ -2466,206 +2343,169 @@ function copyCitation() {
 
         ctx.clearRect(0, 0, W, H);
 
-        // ── Ocean background ──
-        ctx.fillStyle = '#0c1929';
-        ctx.fillRect(0, 0, W, H);
-
-        // ── Draw land masses ──
-        ctx.fillStyle = '#1a2744';
-        ctx.strokeStyle = 'rgba(255,255,255,0.15)';
-        ctx.lineWidth = 1.5;
-
-        // Iberian Peninsula
-        drawCoastline(iberia, true);
-        ctx.fill();
-        ctx.stroke();
-
-        // Mallorca
-        drawCoastline(mallorca, true);
-        ctx.fill();
-        ctx.stroke();
-
-        // Morocco (fill bottom)
-        ctx.beginPath();
-        const m0 = geo2px(morocco[0][0], morocco[0][1]);
-        ctx.moveTo(m0.x, m0.y);
-        for (let i = 1; i < morocco.length; i++) {
-            const p = geo2px(morocco[i][0], morocco[i][1]);
-            ctx.lineTo(p.x, p.y);
-        }
-        ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath();
-        ctx.fill(); ctx.stroke();
-
-        // France (fill top-right)
-        ctx.beginPath();
-        const f0 = geo2px(france[0][0], france[0][1]);
-        ctx.moveTo(f0.x, f0.y);
-        for (let i = 1; i < france.length; i++) {
-            const p = geo2px(france[i][0], france[i][1]);
-            ctx.lineTo(p.x, p.y);
-        }
-        ctx.lineTo(W, 0); ctx.lineTo(f0.x, 0); ctx.closePath();
-        ctx.fill(); ctx.stroke();
-
-        // ── City markers ──
-        const cities = [
-            {name: 'Madrid', lon: -3.7, lat: 40.4},
-            {name: 'Barcelona', lon: 2.2, lat: 41.4},
-            {name: 'Lisbon', lon: -9.1, lat: 38.7},
-            {name: 'Valencia', lon: -0.4, lat: 39.5},
-        ];
-        ctx.font = '10px Inter, sans-serif';
-        ctx.textBaseline = 'bottom';
-        for (const city of cities) {
-            const p = geo2px(city.lon, city.lat);
-            ctx.fillStyle = 'rgba(255,255,255,0.6)';
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.textAlign = 'center';
-            ctx.fillText(city.name, p.x, p.y - 5);
+        // Background: real CRAN-PM PM2.5 map (dimmed)
+        if (bgReady) {
+            ctx.globalAlpha = 0.35;
+            ctx.drawImage(bgImg, 0, 0, W, H);
+            ctx.globalAlpha = 1;
+        } else {
+            ctx.fillStyle = '#0c1929';
+            ctx.fillRect(0, 0, W, H);
         }
 
-        // ── Compute patch target positions based on wind order ──
+        // Patch layout
+        const padX = 30, padY = 30;
+        const cellW = (W - padX * 2) / COLS;
+        const cellH = (H - padY * 2) / ROWS;
+        const patchW = cellW * 0.88;
+        const patchH = cellH * 0.88;
+
+        const gridSlots = [];
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS; c++) {
+                gridSlots.push({
+                    x: padX + c * cellW + cellW / 2,
+                    y: padY + r * cellH + cellH / 2
+                });
+            }
+        }
+
         const order = getOrder(windAngle);
         const rank = new Array(NTOK);
         for (let i = 0; i < NTOK; i++) rank[order[i]] = i;
 
-        // Patches move to positions sorted by wind projection
-        // Target positions: rearrange within the same grid area but sorted
-        const gridSlots = [];
-        for (let r = 0; r < ROWS; r++) {
-            for (let c = 0; c < COLS; c++) {
-                const lon = -9 + c * (12 / (COLS - 1));
-                const lat = 44 - r * (8 / (ROWS - 1));
-                const p = geo2px(lon, lat);
-                gridSlots.push({x: p.x, y: p.y});
-            }
-        }
-
-        // Each patch moves to the slot corresponding to its rank
         for (let idx = 0; idx < NTOK; idx++) {
             const targetSlot = gridSlots[rank[idx]];
             patches[idx].targetX = targetSlot.x;
             patches[idx].targetY = targetSlot.y;
-
             if (!patches[idx].initialized) {
-                const origSlot = gridSlots[idx];
-                patches[idx].dispX = origSlot.x;
-                patches[idx].dispY = origSlot.y;
+                patches[idx].dispX = gridSlots[idx].x;
+                patches[idx].dispY = gridSlots[idx].y;
                 patches[idx].initialized = true;
             }
-
             patches[idx].dispX += (patches[idx].targetX - patches[idx].dispX) * Math.min(1, dt * 3.5);
             patches[idx].dispY += (patches[idx].targetY - patches[idx].dispY) * Math.min(1, dt * 3.5);
         }
 
-        // ── Draw grid ghost slots ──
-        const slotSize = Math.min(W / (COLS + 2), H / (ROWS + 2)) * 0.75;
-        ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+        // Ghost grid
+        ctx.strokeStyle = 'rgba(255,255,255,0.08)';
         ctx.lineWidth = 1;
         for (const slot of gridSlots) {
-            ctx.strokeRect(slot.x - slotSize/2, slot.y - slotSize/2, slotSize, slotSize);
+            ctx.strokeRect(slot.x - patchW/2, slot.y - patchH/2, patchW, patchH);
         }
 
-        // ── Draw connecting trails ──
+        // Connecting trails
         for (let idx = 0; idx < NTOK; idx++) {
-            const origSlot = gridSlots[idx];
-            const px = patches[idx].dispX;
-            const py = patches[idx].dispY;
-            const dist = Math.sqrt((px - origSlot.x) ** 2 + (py - origSlot.y) ** 2);
-            if (dist > 3) {
-                ctx.strokeStyle = rdylbu_r_a(patches[idx].value, 0.12);
+            const orig = gridSlots[idx];
+            const dist = Math.sqrt((patches[idx].dispX - orig.x) ** 2 + (patches[idx].dispY - orig.y) ** 2);
+            if (dist > 4) {
+                ctx.strokeStyle = 'rgba(14,165,233,0.15)';
                 ctx.lineWidth = 1;
                 ctx.setLineDash([2, 3]);
                 ctx.beginPath();
-                ctx.moveTo(origSlot.x, origSlot.y);
-                ctx.lineTo(px, py);
+                ctx.moveTo(orig.x, orig.y);
+                ctx.lineTo(patches[idx].dispX, patches[idx].dispY);
                 ctx.stroke();
                 ctx.setLineDash([]);
             }
         }
 
-        // ── Draw patches (sorted so high-rank draws on top) ──
+        // Draw patches: real image crops that fly around
         const drawOrder = Array.from({length: NTOK}, (_, i) => i);
         drawOrder.sort((a, b) => rank[b] - rank[a]);
+
+        const imgW = bgReady ? bgImg.naturalWidth : 1;
+        const imgH = bgReady ? bgImg.naturalHeight : 1;
 
         for (const idx of drawOrder) {
             const px = patches[idx].dispX;
             const py = patches[idx].dispY;
-            const s = slotSize * 0.92;
             const r_rank = rank[idx];
+            const upwindness = 1 - r_rank / (NTOK - 1);
 
             // Shadow
-            ctx.fillStyle = 'rgba(0,0,0,0.4)';
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
             ctx.beginPath();
-            ctx.roundRect(px - s/2 + 2, py - s/2 + 2, s, s, 4);
+            ctx.roundRect(px - patchW/2 + 3, py - patchH/2 + 3, patchW, patchH, 5);
             ctx.fill();
 
-            // Patch body with RdYlBu_r
-            ctx.fillStyle = rdylbu_r(patches[idx].value);
+            // Clip and draw real map crop
+            ctx.save();
             ctx.beginPath();
-            ctx.roundRect(px - s/2, py - s/2, s, s, 4);
-            ctx.fill();
+            ctx.roundRect(px - patchW/2, py - patchH/2, patchW, patchH, 5);
+            ctx.clip();
 
-            // Border — brighter for upwind patches
-            const upwindness = 1 - r_rank / (NTOK - 1);
-            ctx.strokeStyle = `rgba(255,255,255,${0.15 + upwindness * 0.5})`;
-            ctx.lineWidth = 1 + upwindness;
+            if (bgReady) {
+                const srcX = (patches[idx].gridC / COLS) * imgW;
+                const srcY = (patches[idx].gridR / ROWS) * imgH;
+                const srcW = imgW / COLS;
+                const srcH = imgH / ROWS;
+                ctx.drawImage(bgImg, srcX, srcY, srcW, srcH,
+                    px - patchW/2, py - patchH/2, patchW, patchH);
+            }
+            ctx.restore();
+
+            // Border
+            const bR = Math.floor(14 + upwindness * 230);
+            const bG = Math.floor(165 * upwindness + 100 * (1 - upwindness));
+            const bB = Math.floor(233 * upwindness + 80 * (1 - upwindness));
+            ctx.strokeStyle = `rgba(${bR},${bG},${bB},${0.3 + upwindness * 0.7})`;
+            ctx.lineWidth = 1.5 + upwindness * 1.5;
             ctx.beginPath();
-            ctx.roundRect(px - s/2, py - s/2, s, s, 4);
+            ctx.roundRect(px - patchW/2, py - patchH/2, patchW, patchH, 5);
             ctx.stroke();
 
-            // Rank number
-            ctx.fillStyle = patches[idx].value > 0.55 ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.7)';
-            ctx.font = `bold ${Math.max(9, s * 0.38)}px JetBrains Mono, monospace`;
+            // Rank badge
+            const badgeR = Math.max(10, patchW * 0.16);
+            ctx.fillStyle = `rgba(0,0,0,${0.5 + upwindness * 0.3})`;
+            ctx.beginPath();
+            ctx.arc(px - patchW/2 + badgeR + 3, py - patchH/2 + badgeR + 3, badgeR, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = `rgba(255,255,255,${0.6 + upwindness * 0.4})`;
+            ctx.font = `bold ${Math.max(9, badgeR * 1.1)}px JetBrains Mono, monospace`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText(r_rank + 1, px, py);
+            ctx.fillText(r_rank + 1, px - patchW/2 + badgeR + 3, py - patchH/2 + badgeR + 3);
         }
 
-        // ── Wind arrow (top-left) ──
-        const indX = 45, indY = 30;
-        const aLen = 24;
+        // Wind compass
+        const indX = 30, indY = 18;
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.beginPath();
+        ctx.roundRect(indX - 20, indY - 14, 95, 28, 8);
+        ctx.fill();
+        const aLen = 18;
         const aDx = Math.cos(windAngle) * aLen;
         const aDy = -Math.sin(windAngle) * aLen;
         ctx.strokeStyle = '#0ea5e9';
         ctx.lineWidth = 2.5;
         ctx.beginPath();
-        ctx.moveTo(indX - aDx * 0.5, indY - aDy * 0.5);
-        ctx.lineTo(indX + aDx * 0.5, indY + aDy * 0.5);
+        ctx.moveTo(indX - aDx * 0.4, indY - aDy * 0.4);
+        ctx.lineTo(indX + aDx * 0.4, indY + aDy * 0.4);
         ctx.stroke();
         const aAng = Math.atan2(aDy, aDx);
         ctx.beginPath();
-        ctx.moveTo(indX + aDx * 0.5, indY + aDy * 0.5);
-        ctx.lineTo(indX + aDx * 0.5 - 8 * Math.cos(aAng - 0.45), indY + aDy * 0.5 - 8 * Math.sin(aAng - 0.45));
-        ctx.moveTo(indX + aDx * 0.5, indY + aDy * 0.5);
-        ctx.lineTo(indX + aDx * 0.5 - 8 * Math.cos(aAng + 0.45), indY + aDy * 0.5 - 8 * Math.sin(aAng + 0.45));
+        ctx.moveTo(indX + aDx * 0.4, indY + aDy * 0.4);
+        ctx.lineTo(indX + aDx * 0.4 - 7 * Math.cos(aAng - 0.5), indY + aDy * 0.4 - 7 * Math.sin(aAng - 0.5));
+        ctx.moveTo(indX + aDx * 0.4, indY + aDy * 0.4);
+        ctx.lineTo(indX + aDx * 0.4 - 7 * Math.cos(aAng + 0.5), indY + aDy * 0.4 - 7 * Math.sin(aAng + 0.5));
         ctx.stroke();
-        ctx.font = 'bold 10px Inter, sans-serif';
+        ctx.font = 'bold 11px Inter, sans-serif';
         ctx.fillStyle = '#0ea5e9';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
-        ctx.fillText('Wind', indX + aLen + 8, indY);
+        ctx.fillText('Wind', indX + aLen + 4, indY);
 
-        // ── Colorbar (bottom-right) ──
-        const cbX = W - 140, cbY = H - 28, cbW = 120, cbH = 10;
-        for (let i = 0; i < cbW; i++) {
-            ctx.fillStyle = rdylbu_r(i / cbW);
-            ctx.fillRect(cbX + i, cbY, 1, cbH);
-        }
-        ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(cbX, cbY, cbW, cbH);
-        ctx.font = '9px Inter, sans-serif';
-        ctx.fillStyle = 'rgba(255,255,255,0.5)';
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'top';
-        ctx.fillText('Low', cbX, cbY + cbH + 2);
+        // Label
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.beginPath();
+        ctx.roundRect(W/2 - 120, H - 24, 240, 20, 6);
+        ctx.fill();
+        ctx.font = '10px Inter, sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.6)';
         ctx.textAlign = 'center';
-        ctx.fillText('PM\u2082.\u2085', cbX + cbW / 2, cbY + cbH + 2);
-        ctx.textAlign = 'right';
-        ctx.fillText('High', cbX + cbW, cbY + cbH + 2);
+        ctx.textBaseline = 'middle';
+        ctx.fillText('CRAN-PM Prediction \u2014 Patches reorder along wind', W/2, H - 14);
 
         animId = requestAnimationFrame(draw);
     }
