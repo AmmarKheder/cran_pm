@@ -839,9 +839,9 @@
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5"/><path d="M21 3l-7 7"/><path d="M8 21H3v-5"/><path d="M3 21l7-7"/></svg>
                     5 &middot; Wind-Driven Patch Reordering
                 </h3>
-                <p>Before self-attention, patches are reordered along the wind direction. Upwind patches are processed first, encoding the causal transport of pollutants. Change the wind to see the scanning order adapt in real time.</p>
+                <p>PM2.5 concentration patches over the Iberian Peninsula are reordered along the wind direction before entering the transformer. Upwind patches are processed first, encoding causal pollutant transport. Change the wind to watch patches physically rearrange.</p>
                 <div class="anim-canvas-wrap">
-                    <canvas id="cvsReorder" width="700" height="500"></canvas>
+                    <canvas id="cvsReorder" width="600" height="600"></canvas>
                 </div>
                 <div class="anim-controls">
                     <button class="anim-btn active" onclick="setReorderWind(0, this)">West Wind &rarr;</button>
@@ -2267,7 +2267,7 @@ function copyCitation() {
 })();
 
 // ══════════════════════════════════════════════════════════
-// ── Animation 5: Wind-Driven Patch Reordering ──
+// ── Animation 5: Wind-Driven Patch Reordering (Map) ──
 // ══════════════════════════════════════════════════════════
 (function() {
     const cvs = document.getElementById('cvsReorder');
@@ -2275,235 +2275,397 @@ function copyCitation() {
     const ctx = cvs.getContext('2d');
     let W, H, dpr, animId;
 
-    const COLS = 8, ROWS = 6;
-    const NTOK = COLS * ROWS;
+    // Map bounds: lon [-11, 5], lat [35, 45] — Iberian Peninsula
+    const LON0 = -11, LON1 = 5, LAT0 = 35, LAT1 = 45;
+    const LONW = LON1 - LON0, LATH = LAT1 - LAT0;
 
-    let windAngle = Math.PI; // West wind (blows east)
+    let windAngle = Math.PI;
     let targetAngle = Math.PI;
     let rotating = false;
-    let scanProgress = 0; // 0..NTOK, fractional
 
-    // Assign PM2.5 intensity to each patch (fixed)
-    const patchValues = [];
-    for (let i = 0; i < NTOK; i++) {
-        const r = Math.floor(i / COLS), c = i % COLS;
-        const cx = c / COLS, cy = r / ROWS;
-        let v = 0.1 + 0.08 * Math.sin(cx * 5) * Math.cos(cy * 4);
-        v += 0.5 * Math.exp(-((cx - 0.7) ** 2 + (cy - 0.5) ** 2) / 0.04);
-        v += 0.3 * Math.exp(-((cx - 0.25) ** 2 + (cy - 0.7) ** 2) / 0.03);
-        patchValues.push(Math.min(1, Math.max(0, v)));
+    // Convert geo coords to canvas coords
+    function geo2px(lon, lat) {
+        return {
+            x: ((lon - LON0) / LONW) * W,
+            y: (1 - (lat - LAT0) / LATH) * H
+        };
     }
 
-    function getOrder() {
-        // Sort patches by projection onto wind direction (upwind first)
-        const dx = Math.cos(windAngle);
-        const dy = -Math.sin(windAngle); // canvas Y flipped
+    // Simplified Iberian Peninsula coastline (lon, lat pairs)
+    const iberia = [
+        [-9.5,37.0],[-8.9,36.85],[-7.4,37.0],[-6.9,37.2],[-6.3,36.5],
+        [-5.6,36.0],[-5.3,36.1],[-4.4,36.7],[-3.7,36.7],[-2.2,36.7],
+        [-1.6,37.0],[-0.8,37.6],[-0.5,38.0],[-0.2,38.7],[0.0,39.5],
+        [0.2,40.5],[0.8,40.8],[1.3,41.1],[2.0,41.3],[2.8,41.6],
+        [3.2,42.4],[3.0,42.7],[1.8,42.8],[0.7,42.9],[-0.3,42.8],
+        [-1.0,43.0],[-1.8,43.3],[-2.5,43.4],[-3.5,43.5],[-4.5,43.5],
+        [-5.5,43.5],[-6.2,43.5],[-7.0,43.5],[-7.6,43.7],[-8.3,43.3],
+        [-8.9,42.5],[-8.8,42.0],[-8.9,41.2],[-8.8,40.5],[-9.0,39.5],
+        [-9.5,38.8],[-9.5,38.0],[-9.5,37.0]
+    ];
+
+    // Balearic Islands (simplified)
+    const mallorca = [[2.3,39.2],[2.8,39.5],[3.5,39.8],[4.3,39.9],[4.4,39.6],[3.8,39.3],[3.0,39.1],[2.3,39.2]];
+
+    // Morocco north coast
+    const morocco = [[-5.9,35.8],[-5.3,35.9],[-4.0,35.2],[-2.9,35.1],[-2.2,35.0],[-1.0,35.0],[0.0,35.5],[1.0,35.8],[2.0,36.0],[3.5,36.5],[5.0,36.8]];
+
+    // France south coast
+    const france = [[3.2,42.4],[3.5,42.5],[4.0,43.0],[4.5,43.3],[5.0,43.3]];
+
+    // Grid of PM2.5 patches
+    const COLS = 7, ROWS = 7;
+    const NTOK = COLS * ROWS;
+    const patches = [];
+
+    // Madrid ~ (-3.7, 40.4), Barcelona ~ (2.2, 41.4)
+    for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+            // Map grid to geo coords (within a sub-region of the map)
+            const lon = -9 + c * (12 / (COLS - 1));
+            const lat = 44 - r * (8 / (ROWS - 1));
+
+            // PM2.5 field — hotspots near Madrid, Barcelona, Porto
+            let v = 0.08;
+            // Madrid hotspot
+            const dMad = Math.sqrt((lon + 3.7) ** 2 + (lat - 40.4) ** 2);
+            v += 0.7 * Math.exp(-dMad * dMad / 3);
+            // Barcelona
+            const dBar = Math.sqrt((lon - 2.2) ** 2 + (lat - 41.4) ** 2);
+            v += 0.5 * Math.exp(-dBar * dBar / 2.5);
+            // Lisbon/Porto industrial
+            const dLis = Math.sqrt((lon + 8.5) ** 2 + (lat - 39.5) ** 2);
+            v += 0.35 * Math.exp(-dLis * dLis / 2);
+            // Valencia
+            const dVal = Math.sqrt((lon + 0.3) ** 2 + (lat - 39.5) ** 2);
+            v += 0.3 * Math.exp(-dVal * dVal / 2);
+            // Background gradient (lower at coasts)
+            v += 0.05 * Math.sin(lon * 0.5) * Math.cos(lat * 0.3);
+
+            v = Math.min(1, Math.max(0, v));
+
+            patches.push({
+                gridR: r, gridC: c, id: r * COLS + c,
+                lon: lon, lat: lat,
+                value: v,
+                dispX: 0, dispY: 0,
+                targetX: 0, targetY: 0,
+                initialized: false
+            });
+        }
+    }
+
+    // RdYlBu_r colormap (blue=low → yellow=mid → red=high)
+    function rdylbu_r(v) {
+        v = Math.max(0, Math.min(1, v));
+        let r, g, b;
+        if (v < 0.25) {
+            const t = v / 0.25;
+            r = Math.floor(49 + t * (116 - 49));
+            g = Math.floor(54 + t * (173 - 54));
+            b = Math.floor(149 + t * (209 - 149));
+        } else if (v < 0.5) {
+            const t = (v - 0.25) / 0.25;
+            r = Math.floor(116 + t * (254 - 116));
+            g = Math.floor(173 + t * (224 - 173));
+            b = Math.floor(209 + t * (144 - 209));
+        } else if (v < 0.75) {
+            const t = (v - 0.5) / 0.25;
+            r = Math.floor(254 + t * (244 - 254));
+            g = Math.floor(224 + t * (109 - 224));
+            b = Math.floor(144 + t * (67 - 144));
+        } else {
+            const t = (v - 0.75) / 0.25;
+            r = Math.floor(244 + t * (165 - 244));
+            g = Math.floor(109 + t * (0 - 109));
+            b = Math.floor(67 + t * (38 - 67));
+        }
+        return `rgb(${r},${g},${b})`;
+    }
+
+    function rdylbu_r_a(v, a) {
+        v = Math.max(0, Math.min(1, v));
+        let r, g, b;
+        if (v < 0.25) {
+            const t = v / 0.25;
+            r = Math.floor(49 + t * (116 - 49));
+            g = Math.floor(54 + t * (173 - 54));
+            b = Math.floor(149 + t * (209 - 149));
+        } else if (v < 0.5) {
+            const t = (v - 0.25) / 0.25;
+            r = Math.floor(116 + t * (254 - 116));
+            g = Math.floor(173 + t * (224 - 173));
+            b = Math.floor(209 + t * (144 - 209));
+        } else if (v < 0.75) {
+            const t = (v - 0.5) / 0.25;
+            r = Math.floor(254 + t * (244 - 254));
+            g = Math.floor(224 + t * (109 - 224));
+            b = Math.floor(144 + t * (67 - 144));
+        } else {
+            const t = (v - 0.75) / 0.25;
+            r = Math.floor(244 + t * (165 - 244));
+            g = Math.floor(109 + t * (0 - 109));
+            b = Math.floor(67 + t * (38 - 67));
+        }
+        return `rgba(${r},${g},${b},${a})`;
+    }
+
+    function getOrder(angle) {
+        const dx = Math.cos(angle);
+        const dy = Math.sin(angle); // lat increases = up = wind from north blows south
         const indices = Array.from({length: NTOK}, (_, i) => i);
         indices.sort((a, b) => {
-            const ar = Math.floor(a / COLS), ac = a % COLS;
-            const br = Math.floor(b / COLS), bc = b % COLS;
-            const projA = ac * dx + ar * dy;
-            const projB = bc * dx + br * dy;
-            return projA - projB; // upwind = smallest projection first
+            const projA = patches[a].lon * dx + patches[a].lat * dy;
+            const projB = patches[b].lon * dx + patches[b].lat * dy;
+            return projA - projB;
         });
         return indices;
-    }
-
-    function pmColor(v) {
-        // green → yellow → red
-        const r = Math.floor(30 + v * 225);
-        const g = Math.floor(140 * (1 - v * 0.7) + 60 * v);
-        const b = Math.floor(80 * (1 - v));
-        return `rgb(${Math.min(255,r)},${Math.min(255,g)},${Math.min(255,b)})`;
     }
 
     function resize() {
         const rect = cvs.parentElement.getBoundingClientRect();
         dpr = window.devicePixelRatio || 1;
-        W = rect.width;
-        H = rect.height;
-        cvs.width = W * dpr;
-        cvs.height = H * dpr;
+        const size = Math.min(rect.width, rect.height);
+        W = size; H = size;
+        cvs.width = W * dpr; cvs.height = H * dpr;
+        cvs.style.width = W + 'px';
+        cvs.style.height = H + 'px';
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        // Reset patch positions on resize
+        patches.forEach(p => p.initialized = false);
     }
 
-    function draw() {
-        const time = Date.now() / 1000;
+    function drawCoastline(coords, close) {
+        if (coords.length < 2) return;
+        ctx.beginPath();
+        const p0 = geo2px(coords[0][0], coords[0][1]);
+        ctx.moveTo(p0.x, p0.y);
+        for (let i = 1; i < coords.length; i++) {
+            const p = geo2px(coords[i][0], coords[i][1]);
+            ctx.lineTo(p.x, p.y);
+        }
+        if (close) ctx.closePath();
+    }
 
-        // Smooth wind transition
+    let lastTime = Date.now() / 1000;
+
+    function draw() {
+        const now = Date.now() / 1000;
+        const dt = Math.min(now - lastTime, 0.05);
+        lastTime = now;
+
+        // Smooth wind
         if (rotating) {
             windAngle += 0.012;
         } else {
             let diff = targetAngle - windAngle;
             while (diff > Math.PI) diff -= 2 * Math.PI;
             while (diff < -Math.PI) diff += 2 * Math.PI;
-            windAngle += diff * 0.06;
+            windAngle += diff * 0.05;
         }
-
-        // Advance scan
-        scanProgress += 0.04;
-        if (scanProgress > NTOK + 4) scanProgress = 0;
 
         ctx.clearRect(0, 0, W, H);
 
-        const leftW = W * 0.42;
-        const rightX = W * 0.58;
-        const rightW = W * 0.42;
-        const padX = 20, padY = 40;
-        const cellW = (leftW - padX * 2) / COLS;
-        const cellH = (H - padY * 2) / ROWS;
+        // ── Ocean background ──
+        ctx.fillStyle = '#0c1929';
+        ctx.fillRect(0, 0, W, H);
 
-        const order = getOrder();
+        // ── Draw land masses ──
+        ctx.fillStyle = '#1a2744';
+        ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+        ctx.lineWidth = 1.5;
 
-        // Build rank lookup: rank[patchIdx] = position in scan order
+        // Iberian Peninsula
+        drawCoastline(iberia, true);
+        ctx.fill();
+        ctx.stroke();
+
+        // Mallorca
+        drawCoastline(mallorca, true);
+        ctx.fill();
+        ctx.stroke();
+
+        // Morocco (fill bottom)
+        ctx.beginPath();
+        const m0 = geo2px(morocco[0][0], morocco[0][1]);
+        ctx.moveTo(m0.x, m0.y);
+        for (let i = 1; i < morocco.length; i++) {
+            const p = geo2px(morocco[i][0], morocco[i][1]);
+            ctx.lineTo(p.x, p.y);
+        }
+        ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath();
+        ctx.fill(); ctx.stroke();
+
+        // France (fill top-right)
+        ctx.beginPath();
+        const f0 = geo2px(france[0][0], france[0][1]);
+        ctx.moveTo(f0.x, f0.y);
+        for (let i = 1; i < france.length; i++) {
+            const p = geo2px(france[i][0], france[i][1]);
+            ctx.lineTo(p.x, p.y);
+        }
+        ctx.lineTo(W, 0); ctx.lineTo(f0.x, 0); ctx.closePath();
+        ctx.fill(); ctx.stroke();
+
+        // ── City markers ──
+        const cities = [
+            {name: 'Madrid', lon: -3.7, lat: 40.4},
+            {name: 'Barcelona', lon: 2.2, lat: 41.4},
+            {name: 'Lisbon', lon: -9.1, lat: 38.7},
+            {name: 'Valencia', lon: -0.4, lat: 39.5},
+        ];
+        ctx.font = '10px Inter, sans-serif';
+        ctx.textBaseline = 'bottom';
+        for (const city of cities) {
+            const p = geo2px(city.lon, city.lat);
+            ctx.fillStyle = 'rgba(255,255,255,0.6)';
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.textAlign = 'center';
+            ctx.fillText(city.name, p.x, p.y - 5);
+        }
+
+        // ── Compute patch target positions based on wind order ──
+        const order = getOrder(windAngle);
         const rank = new Array(NTOK);
         for (let i = 0; i < NTOK; i++) rank[order[i]] = i;
 
-        // ── LEFT: Original grid with scan overlay ──
-        ctx.font = 'bold 11px Inter, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-
-        for (let idx = 0; idx < NTOK; idx++) {
-            const r = Math.floor(idx / COLS), c = idx % COLS;
-            const x = padX + c * cellW;
-            const y = padY + r * cellH;
-            const scanRank = rank[idx];
-            const isProcessed = scanRank < Math.floor(scanProgress);
-            const isCurrent = scanRank === Math.floor(scanProgress);
-
-            // Patch fill
-            ctx.fillStyle = pmColor(patchValues[idx]);
-            ctx.globalAlpha = isProcessed ? 1.0 : 0.25;
-            if (isCurrent) ctx.globalAlpha = 0.7 + 0.3 * Math.sin(time * 6);
-            ctx.fillRect(x + 1, y + 1, cellW - 2, cellH - 2);
-
-            // Border
-            ctx.globalAlpha = 1;
-            if (isCurrent) {
-                ctx.strokeStyle = '#f59e0b';
-                ctx.lineWidth = 3;
-            } else if (isProcessed) {
-                ctx.strokeStyle = 'rgba(14,165,233,0.7)';
-                ctx.lineWidth = 1.5;
-            } else {
-                ctx.strokeStyle = 'rgba(255,255,255,0.1)';
-                ctx.lineWidth = 1;
-            }
-            ctx.strokeRect(x + 1, y + 1, cellW - 2, cellH - 2);
-
-            // Scan order number
-            if (isProcessed || isCurrent) {
-                ctx.fillStyle = isProcessed ? 'rgba(255,255,255,0.9)' : '#f59e0b';
-                ctx.font = `bold ${Math.max(9, cellW * 0.32)}px JetBrains Mono, monospace`;
-                ctx.fillText(scanRank + 1, x + cellW / 2, y + cellH / 2);
+        // Patches move to positions sorted by wind projection
+        // Target positions: rearrange within the same grid area but sorted
+        const gridSlots = [];
+        for (let r = 0; r < ROWS; r++) {
+            for (let c = 0; c < COLS; c++) {
+                const lon = -9 + c * (12 / (COLS - 1));
+                const lat = 44 - r * (8 / (ROWS - 1));
+                const p = geo2px(lon, lat);
+                gridSlots.push({x: p.x, y: p.y});
             }
         }
 
-        // Wind arrow on left grid
-        const arrowX = padX + leftW * 0.5 - padX;
-        const arrowY = padY - 20;
-        const aDx = Math.cos(windAngle) * 30;
-        const aDy = -Math.sin(windAngle) * 30;
+        // Each patch moves to the slot corresponding to its rank
+        for (let idx = 0; idx < NTOK; idx++) {
+            const targetSlot = gridSlots[rank[idx]];
+            patches[idx].targetX = targetSlot.x;
+            patches[idx].targetY = targetSlot.y;
+
+            if (!patches[idx].initialized) {
+                const origSlot = gridSlots[idx];
+                patches[idx].dispX = origSlot.x;
+                patches[idx].dispY = origSlot.y;
+                patches[idx].initialized = true;
+            }
+
+            patches[idx].dispX += (patches[idx].targetX - patches[idx].dispX) * Math.min(1, dt * 3.5);
+            patches[idx].dispY += (patches[idx].targetY - patches[idx].dispY) * Math.min(1, dt * 3.5);
+        }
+
+        // ── Draw grid ghost slots ──
+        const slotSize = Math.min(W / (COLS + 2), H / (ROWS + 2)) * 0.75;
+        ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+        ctx.lineWidth = 1;
+        for (const slot of gridSlots) {
+            ctx.strokeRect(slot.x - slotSize/2, slot.y - slotSize/2, slotSize, slotSize);
+        }
+
+        // ── Draw connecting trails ──
+        for (let idx = 0; idx < NTOK; idx++) {
+            const origSlot = gridSlots[idx];
+            const px = patches[idx].dispX;
+            const py = patches[idx].dispY;
+            const dist = Math.sqrt((px - origSlot.x) ** 2 + (py - origSlot.y) ** 2);
+            if (dist > 3) {
+                ctx.strokeStyle = rdylbu_r_a(patches[idx].value, 0.12);
+                ctx.lineWidth = 1;
+                ctx.setLineDash([2, 3]);
+                ctx.beginPath();
+                ctx.moveTo(origSlot.x, origSlot.y);
+                ctx.lineTo(px, py);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+        }
+
+        // ── Draw patches (sorted so high-rank draws on top) ──
+        const drawOrder = Array.from({length: NTOK}, (_, i) => i);
+        drawOrder.sort((a, b) => rank[b] - rank[a]);
+
+        for (const idx of drawOrder) {
+            const px = patches[idx].dispX;
+            const py = patches[idx].dispY;
+            const s = slotSize * 0.92;
+            const r_rank = rank[idx];
+
+            // Shadow
+            ctx.fillStyle = 'rgba(0,0,0,0.4)';
+            ctx.beginPath();
+            ctx.roundRect(px - s/2 + 2, py - s/2 + 2, s, s, 4);
+            ctx.fill();
+
+            // Patch body with RdYlBu_r
+            ctx.fillStyle = rdylbu_r(patches[idx].value);
+            ctx.beginPath();
+            ctx.roundRect(px - s/2, py - s/2, s, s, 4);
+            ctx.fill();
+
+            // Border — brighter for upwind patches
+            const upwindness = 1 - r_rank / (NTOK - 1);
+            ctx.strokeStyle = `rgba(255,255,255,${0.15 + upwindness * 0.5})`;
+            ctx.lineWidth = 1 + upwindness;
+            ctx.beginPath();
+            ctx.roundRect(px - s/2, py - s/2, s, s, 4);
+            ctx.stroke();
+
+            // Rank number
+            ctx.fillStyle = patches[idx].value > 0.55 ? 'rgba(255,255,255,0.9)' : 'rgba(0,0,0,0.7)';
+            ctx.font = `bold ${Math.max(9, s * 0.38)}px JetBrains Mono, monospace`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(r_rank + 1, px, py);
+        }
+
+        // ── Wind arrow (top-left) ──
+        const indX = 45, indY = 30;
+        const aLen = 24;
+        const aDx = Math.cos(windAngle) * aLen;
+        const aDy = -Math.sin(windAngle) * aLen;
         ctx.strokeStyle = '#0ea5e9';
         ctx.lineWidth = 2.5;
         ctx.beginPath();
-        ctx.moveTo(arrowX - aDx * 0.5, arrowY - aDy * 0.5);
-        ctx.lineTo(arrowX + aDx * 0.5, arrowY + aDy * 0.5);
+        ctx.moveTo(indX - aDx * 0.5, indY - aDy * 0.5);
+        ctx.lineTo(indX + aDx * 0.5, indY + aDy * 0.5);
         ctx.stroke();
         const aAng = Math.atan2(aDy, aDx);
         ctx.beginPath();
-        ctx.moveTo(arrowX + aDx * 0.5, arrowY + aDy * 0.5);
-        ctx.lineTo(arrowX + aDx * 0.5 - 8 * Math.cos(aAng - 0.5), arrowY + aDy * 0.5 - 8 * Math.sin(aAng - 0.5));
-        ctx.moveTo(arrowX + aDx * 0.5, arrowY + aDy * 0.5);
-        ctx.lineTo(arrowX + aDx * 0.5 - 8 * Math.cos(aAng + 0.5), arrowY + aDy * 0.5 - 8 * Math.sin(aAng + 0.5));
+        ctx.moveTo(indX + aDx * 0.5, indY + aDy * 0.5);
+        ctx.lineTo(indX + aDx * 0.5 - 8 * Math.cos(aAng - 0.45), indY + aDy * 0.5 - 8 * Math.sin(aAng - 0.45));
+        ctx.moveTo(indX + aDx * 0.5, indY + aDy * 0.5);
+        ctx.lineTo(indX + aDx * 0.5 - 8 * Math.cos(aAng + 0.45), indY + aDy * 0.5 - 8 * Math.sin(aAng + 0.45));
         ctx.stroke();
-        ctx.font = '10px Inter, sans-serif';
-        ctx.fillStyle = 'rgba(255,255,255,0.6)';
-        ctx.fillText('Wind', arrowX, arrowY - 14);
+        ctx.font = 'bold 10px Inter, sans-serif';
+        ctx.fillStyle = '#0ea5e9';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Wind', indX + aLen + 8, indY);
 
-        // Label
-        ctx.font = 'bold 12px Inter, sans-serif';
-        ctx.fillStyle = 'rgba(255,255,255,0.5)';
-        ctx.fillText('Original Grid', padX + (leftW - padX * 2) / 2, H - 10);
-
-        // ── CENTER: Arrow ──
-        const midX = W * 0.5;
-        const midY = H * 0.5;
-        ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(midX - 20, midY);
-        ctx.lineTo(midX + 20, midY);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(midX + 20, midY);
-        ctx.lineTo(midX + 12, midY - 6);
-        ctx.moveTo(midX + 20, midY);
-        ctx.lineTo(midX + 12, midY + 6);
-        ctx.stroke();
-        ctx.font = '10px Inter, sans-serif';
-        ctx.fillStyle = 'rgba(255,255,255,0.4)';
-        ctx.fillText('reorder', midX, midY - 14);
-
-        // ── RIGHT: Reordered 1D sequence ──
-        const seqX = rightX;
-        const seqW = rightW - padX;
-        const tokenW = Math.min(seqW / 8, 38);
-        const tokenH = tokenW;
-        const tokensPerRow = Math.floor(seqW / (tokenW + 4));
-        const seqRows = Math.ceil(NTOK / tokensPerRow);
-
-        ctx.font = 'bold 12px Inter, sans-serif';
-        ctx.fillStyle = 'rgba(255,255,255,0.5)';
-        ctx.textAlign = 'center';
-        ctx.fillText('Reordered Sequence (to Self-Attention)', seqX + seqW / 2, padY - 10);
-
-        for (let s = 0; s < NTOK; s++) {
-            const patchIdx = order[s];
-            const col = s % tokensPerRow;
-            const row = Math.floor(s / tokensPerRow);
-            const tx = seqX + col * (tokenW + 4);
-            const ty = padY + 10 + row * (tokenH + 16);
-            const isProcessed = s < Math.floor(scanProgress);
-            const isCurrent = s === Math.floor(scanProgress);
-
-            ctx.globalAlpha = isProcessed ? 1.0 : 0.2;
-            if (isCurrent) ctx.globalAlpha = 0.7 + 0.3 * Math.sin(time * 6);
-            ctx.fillStyle = pmColor(patchValues[patchIdx]);
-            ctx.beginPath();
-            ctx.roundRect(tx, ty, tokenW, tokenH, 4);
-            ctx.fill();
-
-            ctx.globalAlpha = 1;
-            if (isCurrent) {
-                ctx.strokeStyle = '#f59e0b';
-                ctx.lineWidth = 2;
-            } else if (isProcessed) {
-                ctx.strokeStyle = 'rgba(14,165,233,0.5)';
-                ctx.lineWidth = 1;
-            } else {
-                ctx.strokeStyle = 'rgba(255,255,255,0.08)';
-                ctx.lineWidth = 1;
-            }
-            ctx.beginPath();
-            ctx.roundRect(tx, ty, tokenW, tokenH, 4);
-            ctx.stroke();
-
-            // Index label
-            if (isProcessed || isCurrent) {
-                ctx.fillStyle = 'rgba(255,255,255,0.9)';
-                ctx.font = `bold ${Math.max(8, tokenW * 0.3)}px JetBrains Mono, monospace`;
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(s + 1, tx + tokenW / 2, ty + tokenH / 2);
-            }
+        // ── Colorbar (bottom-right) ──
+        const cbX = W - 140, cbY = H - 28, cbW = 120, cbH = 10;
+        for (let i = 0; i < cbW; i++) {
+            ctx.fillStyle = rdylbu_r(i / cbW);
+            ctx.fillRect(cbX + i, cbY, 1, cbH);
         }
-        ctx.globalAlpha = 1;
+        ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(cbX, cbY, cbW, cbH);
+        ctx.font = '9px Inter, sans-serif';
         ctx.fillStyle = 'rgba(255,255,255,0.5)';
-        ctx.font = 'bold 12px Inter, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText('Low', cbX, cbY + cbH + 2);
         ctx.textAlign = 'center';
-        ctx.fillText('Upwind \u2192 Downwind', seqX + seqW / 2, H - 10);
+        ctx.fillText('PM\u2082.\u2085', cbX + cbW / 2, cbY + cbH + 2);
+        ctx.textAlign = 'right';
+        ctx.fillText('High', cbX + cbW, cbY + cbH + 2);
 
         animId = requestAnimationFrame(draw);
     }
@@ -2513,13 +2675,8 @@ function copyCitation() {
     window.setReorderWind = function(idx, btn) {
         btn.parentElement.querySelectorAll('.anim-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        if (idx === 3) {
-            rotating = true;
-        } else {
-            rotating = false;
-            targetAngle = windPresets[idx];
-        }
-        scanProgress = 0; // restart scan on wind change
+        if (idx === 3) { rotating = true; }
+        else { rotating = false; targetAngle = windPresets[idx]; }
     };
 
     resize();
