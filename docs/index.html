@@ -5,10 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CRAN-PM — Cross-Resolution Attention Network for PM₂.₅ Forecasting</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
-        onload="renderMathInElement(document.body, {delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]});"></script>
     <style>
         :root {
             --primary: #1e40af;
@@ -389,29 +385,6 @@
             to { opacity: 1; }
         }
 
-        /* ── Equations Section ── */
-        .equations { background: var(--dark); color: #e2e8f0; }
-        .equations .section-label { color: var(--accent); }
-        .equations .section-title { color: var(--white); }
-        .equations .section-subtitle { color: var(--gray-light); }
-
-        .eq-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
-
-        .eq-card {
-            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 16px; padding: 32px; transition: all 0.3s;
-        }
-        .eq-card:hover {
-            background: rgba(255,255,255,0.08);
-            border-color: rgba(14,165,233,0.4);
-            transform: translateY(-2px);
-        }
-
-        .eq-card h3 { color: var(--white); margin-bottom: 16px; font-size: 1.1rem; }
-        .eq-card p { color: var(--gray-light); font-size: 0.9rem; margin-bottom: 16px; }
-
-        .eq-card .katex-display { margin: 16px 0; }
-        .eq-card .katex { color: #e2e8f0; }
 
         /* ── Specs Table ── */
         .specs { background: var(--light); }
@@ -658,10 +631,10 @@
             <li><a href="#method">Method</a></li>
             <li><a href="#results">Results</a></li>
             <li><a href="#ood">Zero-Shot</a></li>
-            <li><a href="#equations">Equations</a></li>
             <li><a href="#specs">Specs</a></li>
             <li><a href="#quickstart">Code</a></li>
             <li><a href="https://github.com/AmmarKheder/cran_pm" target="_blank">GitHub</a></li>
+            <li><a href="https://arxiv.org/abs/2603.11725" target="_blank">arXiv</a></li>
         </ul>
     </div>
 </nav>
@@ -681,6 +654,10 @@
                 <a href="https://github.com/AmmarKheder/cran_pm" class="btn btn-primary" target="_blank">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
                     View on GitHub
+                </a>
+                <a href="https://arxiv.org/abs/2603.11725" class="btn btn-primary" target="_blank">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M4 2h10l6 6v14H4V2zm10 0v6h6M8 13h8M8 17h5"/><path d="M4 2h10l6 6v14H4V2z" fill="none" stroke="currentColor" stroke-width="1.5"/><line x1="8" y1="13" x2="16" y2="13" stroke="currentColor" stroke-width="1.5"/><line x1="8" y1="17" x2="13" y2="17" stroke="currentColor" stroke-width="1.5"/></svg>
+                    arXiv Paper
                 </a>
                 <a href="#results" class="btn btn-secondary">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -791,7 +768,7 @@
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.59 4.59A2 2 0 1111 8H2m10.59 11.41A2 2 0 1014 16H2m15.73-8.27A2.5 2.5 0 1119.5 12H2"/></svg>
                     2 &middot; Wind-Guided Attention
                 </h3>
-                <p>Attention is biased toward upwind sources via a learnable wind alignment score: $\gamma_{ij} = \cos(\theta_{ij} - \theta_{\text{wind}})$. Upwind tokens receive higher attention weights.</p>
+                <p>Attention is biased toward upwind sources via a learnable wind alignment score. Upwind tokens receive higher attention weights.</p>
                 <div class="anim-canvas-wrap">
                     <canvas id="cvsWind" width="600" height="600"></canvas>
                 </div>
@@ -816,7 +793,7 @@
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 20L2 20"/><path d="M2 20l5-8 3 4 4-10 3 6 5-4"/></svg>
                     3 &middot; Elevation-Aware Attention
                 </h3>
-                <p>An asymmetric ReLU bias penalises attention to higher-elevation sources. Pollution flows downhill (katabatic) but is blocked uphill. $B^{\text{elev}}_{ij} = -\alpha \cdot \text{ReLU}(E_j - E_i)$</p>
+                <p>An asymmetric ReLU bias penalises attention to higher-elevation sources. Pollution flows downhill (katabatic) but is blocked uphill.</p>
                 <div class="anim-canvas-wrap">
                     <canvas id="cvsElev" width="600" height="600"></canvas>
                 </div>
@@ -851,6 +828,31 @@
                 <div class="anim-legend">
                     <span><span class="dot" style="background:#8b5cf6"></span>Channel depth</span>
                     <span><span class="dot" style="background:#0ea5e9"></span>Spatial resolution</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 3: Patch Reordering -->
+        <div class="anim-row" style="margin-top: 48px;">
+            <div class="anim-box" style="grid-column: 1 / -1; max-width: 700px; margin: 0 auto;">
+                <h3>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5"/><path d="M21 3l-7 7"/><path d="M8 21H3v-5"/><path d="M3 21l7-7"/></svg>
+                    5 &middot; Wind-Driven Patch Reordering
+                </h3>
+                <p>Before self-attention, patches are reordered along the wind direction. Upwind patches are processed first, encoding the causal transport of pollutants. Change the wind to see the scanning order adapt in real time.</p>
+                <div class="anim-canvas-wrap">
+                    <canvas id="cvsReorder" width="700" height="500"></canvas>
+                </div>
+                <div class="anim-controls">
+                    <button class="anim-btn active" onclick="setReorderWind(0, this)">West Wind &rarr;</button>
+                    <button class="anim-btn" onclick="setReorderWind(1, this)">North Wind &darr;</button>
+                    <button class="anim-btn" onclick="setReorderWind(2, this)">South-East &nwarr;</button>
+                    <button class="anim-btn" onclick="setReorderWind(3, this)">Rotate</button>
+                </div>
+                <div class="anim-legend">
+                    <span><span class="dot" style="background:#0ea5e9"></span>Processed (upwind first)</span>
+                    <span><span class="dot" style="background:#1e293b"></span>Waiting</span>
+                    <span><span class="dot" style="background:#f59e0b"></span>Current patch</span>
                 </div>
             </div>
         </div>
@@ -900,13 +902,10 @@
                 </h3>
                 <p>
                     Local fine-resolution tokens (1 km) query global coarse tokens (25 km) for large-scale
-                    meteorological context. A wind-guided bias $B^{\text{wind}}_{ij} = \beta \cdot \gamma_{ij}$
-                    aligns attention to upwind sources, reflecting the causal physics: local PM<sub>2.5</sub>
+                    meteorological context. A wind-guided bias aligns attention to upwind sources,
+                    reflecting the causal physics: local PM<sub>2.5</sub>
                     responds to global meteorology, not vice versa.
                 </p>
-                <div class="math-block">
-                    $\text{CrossAttn} = \text{softmax}\!\left(\frac{QK^\top}{\sqrt{d_h}} + B^{\text{wind}}\right) V$
-                </div>
             </div>
 
             <div class="method-card">
@@ -921,9 +920,6 @@
                     added to today's observation. Zero-initialised final convolution ensures the model
                     starts at the persistence baseline, dramatically stabilising early training.
                 </p>
-                <div class="math-block">
-                    $\hat{y}_{t+1} = y_t + \Delta_\theta(z_\ell, z_g)$
-                </div>
             </div>
 
             <div class="method-card">
@@ -952,9 +948,6 @@
                     downhill interactions unaffected, consistent with katabatic flows. Injected as an
                     architectural prior in the first attention block of each branch.
                 </p>
-                <div class="math-block">
-                    $B^{\text{elev}}_{ij} = -\alpha \cdot \text{ReLU}\!\left(\frac{E_j - E_i}{E_0}\right)$
-                </div>
             </div>
         </div>
 
@@ -1138,42 +1131,6 @@
 </section>
 
 
-<!-- ══════════════════════ EQUATIONS ══════════════════════ -->
-<section class="equations reveal" id="equations">
-    <div class="container">
-        <p class="section-label">Mathematics</p>
-        <h2 class="section-title">Key Formulations</h2>
-        <p class="section-subtitle">
-            The mathematical foundations behind CRAN-PM's cross-resolution prediction.
-        </p>
-
-        <div class="eq-grid">
-            <div class="eq-card">
-                <h3>Delta Prediction</h3>
-                <p>Output is today's observation plus a learned residual.</p>
-                $$\hat{y}_{t+\tau} = x^{\ell}_t + f_\theta\!\left(\mathbf{x}^{\text{g}}_t, \mathbf{x}^{\ell}_t, \tau\right)$$
-            </div>
-
-            <div class="eq-card">
-                <h3>Elevation-Aware Attention</h3>
-                <p>Asymmetric bias penalises attention to higher-elevation sources, consistent with katabatic flows.</p>
-                $$B^{\text{elev}}_{ij} = -\alpha \cdot \text{ReLU}\!\Big(\frac{E_j - E_i}{E_0}\Big), \quad \text{Attn} = \text{softmax}\!\Big(\frac{QK^\top}{\sqrt{d_h}} + B^{\text{elev}} + B^{\text{rel}}\Big)V$$
-            </div>
-
-            <div class="eq-card">
-                <h3>Wind-Guided Cross-Attention</h3>
-                <p>Upwind alignment score $\gamma_{ij} \in [-1,1]$ between local patch $i$ and global patch $j$.</p>
-                $$\gamma_{ij} = \frac{(\mathbf{p}_i - \mathbf{p}_j)}{\|\mathbf{p}_i - \mathbf{p}_j\|} \cdot \frac{(u_{10,i}, v_{10,i})}{\|(u_{10,i}, v_{10,i})\|}, \quad B^{\text{wind}}_{ij} = \beta \cdot \gamma_{ij}$$
-            </div>
-
-            <div class="eq-card">
-                <h3>Training Objective</h3>
-                <p>Pixel MSE + focal frequency loss + EEA station supervision.</p>
-                $$\mathcal{L} = \mathcal{L}_{\text{pixel}} + \lambda_{\text{FFL}}\,\mathcal{L}_{\text{FFL}} + \lambda_{\text{station}}\,\mathcal{L}_{\text{station}}$$
-            </div>
-        </div>
-    </div>
-</section>
 
 <!-- ══════════════════════ SPECIFICATIONS ══════════════════════ -->
 <section class="specs reveal" id="specs">
@@ -1304,18 +1261,18 @@
         <p class="section-label">Citation</p>
         <h2 class="section-title">Cite This Work</h2>
         <p class="section-subtitle">
-            If you find CRAN-PM useful, please cite our paper.
+            If you find CRAN-PM useful, please cite our paper. <a href="https://arxiv.org/abs/2603.11725" target="_blank" style="color: var(--accent);">arXiv:2603.11725</a>
         </p>
 
         <div class="citation-box">
             <button class="copy-btn" onclick="copyCitation()">Copy</button>
-<pre style="margin:0; white-space: pre-wrap;">@inproceedings{kheder2026cranpm,
+<pre style="margin:0; white-space: pre-wrap;">@article{kheder2026cranpm,
   title     = {Cross-Resolution Attention Network for
                High-Resolution {PM}$_{2.5}$ Prediction},
   author    = {Kheder, Ammar and Toropainen, Helmi and
                Peng, Wenqing and Ant{\~a}o, Samuel and
                Liu, Zhi-Song and Boy, Michael},
-  booktitle = {Proceedings of Computer Vision Conference},
+  journal   = {arXiv preprint arXiv:2603.11725},
   year      = {2026}
 }</pre>
         </div>
@@ -1327,6 +1284,7 @@
     <div class="container">
         <div class="footer-links">
             <a href="https://github.com/AmmarKheder/cran_pm" target="_blank">GitHub</a>
+            <a href="https://arxiv.org/abs/2603.11725" target="_blank">arXiv</a>
             <a href="#architecture">Architecture</a>
             <a href="#results">Results</a>
             <a href="#ood">Zero-Shot</a>
@@ -2297,6 +2255,271 @@ function copyCitation() {
         stage = s;
         btn.parentElement.querySelectorAll('.anim-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
+    };
+
+    resize();
+    window.addEventListener('resize', resize);
+    const obs = new IntersectionObserver(entries => {
+        if (entries[0].isIntersecting) { if (!animId) draw(); }
+        else { cancelAnimationFrame(animId); animId = null; }
+    }, { threshold: 0.05 });
+    obs.observe(cvs.parentElement);
+})();
+
+// ══════════════════════════════════════════════════════════
+// ── Animation 5: Wind-Driven Patch Reordering ──
+// ══════════════════════════════════════════════════════════
+(function() {
+    const cvs = document.getElementById('cvsReorder');
+    if (!cvs) return;
+    const ctx = cvs.getContext('2d');
+    let W, H, dpr, animId;
+
+    const COLS = 8, ROWS = 6;
+    const NTOK = COLS * ROWS;
+
+    let windAngle = Math.PI; // West wind (blows east)
+    let targetAngle = Math.PI;
+    let rotating = false;
+    let scanProgress = 0; // 0..NTOK, fractional
+
+    // Assign PM2.5 intensity to each patch (fixed)
+    const patchValues = [];
+    for (let i = 0; i < NTOK; i++) {
+        const r = Math.floor(i / COLS), c = i % COLS;
+        const cx = c / COLS, cy = r / ROWS;
+        let v = 0.1 + 0.08 * Math.sin(cx * 5) * Math.cos(cy * 4);
+        v += 0.5 * Math.exp(-((cx - 0.7) ** 2 + (cy - 0.5) ** 2) / 0.04);
+        v += 0.3 * Math.exp(-((cx - 0.25) ** 2 + (cy - 0.7) ** 2) / 0.03);
+        patchValues.push(Math.min(1, Math.max(0, v)));
+    }
+
+    function getOrder() {
+        // Sort patches by projection onto wind direction (upwind first)
+        const dx = Math.cos(windAngle);
+        const dy = -Math.sin(windAngle); // canvas Y flipped
+        const indices = Array.from({length: NTOK}, (_, i) => i);
+        indices.sort((a, b) => {
+            const ar = Math.floor(a / COLS), ac = a % COLS;
+            const br = Math.floor(b / COLS), bc = b % COLS;
+            const projA = ac * dx + ar * dy;
+            const projB = bc * dx + br * dy;
+            return projA - projB; // upwind = smallest projection first
+        });
+        return indices;
+    }
+
+    function pmColor(v) {
+        // green → yellow → red
+        const r = Math.floor(30 + v * 225);
+        const g = Math.floor(140 * (1 - v * 0.7) + 60 * v);
+        const b = Math.floor(80 * (1 - v));
+        return `rgb(${Math.min(255,r)},${Math.min(255,g)},${Math.min(255,b)})`;
+    }
+
+    function resize() {
+        const rect = cvs.parentElement.getBoundingClientRect();
+        dpr = window.devicePixelRatio || 1;
+        W = rect.width;
+        H = rect.height;
+        cvs.width = W * dpr;
+        cvs.height = H * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function draw() {
+        const time = Date.now() / 1000;
+
+        // Smooth wind transition
+        if (rotating) {
+            windAngle += 0.012;
+        } else {
+            let diff = targetAngle - windAngle;
+            while (diff > Math.PI) diff -= 2 * Math.PI;
+            while (diff < -Math.PI) diff += 2 * Math.PI;
+            windAngle += diff * 0.06;
+        }
+
+        // Advance scan
+        scanProgress += 0.04;
+        if (scanProgress > NTOK + 4) scanProgress = 0;
+
+        ctx.clearRect(0, 0, W, H);
+
+        const leftW = W * 0.42;
+        const rightX = W * 0.58;
+        const rightW = W * 0.42;
+        const padX = 20, padY = 40;
+        const cellW = (leftW - padX * 2) / COLS;
+        const cellH = (H - padY * 2) / ROWS;
+
+        const order = getOrder();
+
+        // Build rank lookup: rank[patchIdx] = position in scan order
+        const rank = new Array(NTOK);
+        for (let i = 0; i < NTOK; i++) rank[order[i]] = i;
+
+        // ── LEFT: Original grid with scan overlay ──
+        ctx.font = 'bold 11px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        for (let idx = 0; idx < NTOK; idx++) {
+            const r = Math.floor(idx / COLS), c = idx % COLS;
+            const x = padX + c * cellW;
+            const y = padY + r * cellH;
+            const scanRank = rank[idx];
+            const isProcessed = scanRank < Math.floor(scanProgress);
+            const isCurrent = scanRank === Math.floor(scanProgress);
+
+            // Patch fill
+            ctx.fillStyle = pmColor(patchValues[idx]);
+            ctx.globalAlpha = isProcessed ? 1.0 : 0.25;
+            if (isCurrent) ctx.globalAlpha = 0.7 + 0.3 * Math.sin(time * 6);
+            ctx.fillRect(x + 1, y + 1, cellW - 2, cellH - 2);
+
+            // Border
+            ctx.globalAlpha = 1;
+            if (isCurrent) {
+                ctx.strokeStyle = '#f59e0b';
+                ctx.lineWidth = 3;
+            } else if (isProcessed) {
+                ctx.strokeStyle = 'rgba(14,165,233,0.7)';
+                ctx.lineWidth = 1.5;
+            } else {
+                ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+                ctx.lineWidth = 1;
+            }
+            ctx.strokeRect(x + 1, y + 1, cellW - 2, cellH - 2);
+
+            // Scan order number
+            if (isProcessed || isCurrent) {
+                ctx.fillStyle = isProcessed ? 'rgba(255,255,255,0.9)' : '#f59e0b';
+                ctx.font = `bold ${Math.max(9, cellW * 0.32)}px JetBrains Mono, monospace`;
+                ctx.fillText(scanRank + 1, x + cellW / 2, y + cellH / 2);
+            }
+        }
+
+        // Wind arrow on left grid
+        const arrowX = padX + leftW * 0.5 - padX;
+        const arrowY = padY - 20;
+        const aDx = Math.cos(windAngle) * 30;
+        const aDy = -Math.sin(windAngle) * 30;
+        ctx.strokeStyle = '#0ea5e9';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(arrowX - aDx * 0.5, arrowY - aDy * 0.5);
+        ctx.lineTo(arrowX + aDx * 0.5, arrowY + aDy * 0.5);
+        ctx.stroke();
+        const aAng = Math.atan2(aDy, aDx);
+        ctx.beginPath();
+        ctx.moveTo(arrowX + aDx * 0.5, arrowY + aDy * 0.5);
+        ctx.lineTo(arrowX + aDx * 0.5 - 8 * Math.cos(aAng - 0.5), arrowY + aDy * 0.5 - 8 * Math.sin(aAng - 0.5));
+        ctx.moveTo(arrowX + aDx * 0.5, arrowY + aDy * 0.5);
+        ctx.lineTo(arrowX + aDx * 0.5 - 8 * Math.cos(aAng + 0.5), arrowY + aDy * 0.5 - 8 * Math.sin(aAng + 0.5));
+        ctx.stroke();
+        ctx.font = '10px Inter, sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.6)';
+        ctx.fillText('Wind', arrowX, arrowY - 14);
+
+        // Label
+        ctx.font = 'bold 12px Inter, sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.fillText('Original Grid', padX + (leftW - padX * 2) / 2, H - 10);
+
+        // ── CENTER: Arrow ──
+        const midX = W * 0.5;
+        const midY = H * 0.5;
+        ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(midX - 20, midY);
+        ctx.lineTo(midX + 20, midY);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(midX + 20, midY);
+        ctx.lineTo(midX + 12, midY - 6);
+        ctx.moveTo(midX + 20, midY);
+        ctx.lineTo(midX + 12, midY + 6);
+        ctx.stroke();
+        ctx.font = '10px Inter, sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.4)';
+        ctx.fillText('reorder', midX, midY - 14);
+
+        // ── RIGHT: Reordered 1D sequence ──
+        const seqX = rightX;
+        const seqW = rightW - padX;
+        const tokenW = Math.min(seqW / 8, 38);
+        const tokenH = tokenW;
+        const tokensPerRow = Math.floor(seqW / (tokenW + 4));
+        const seqRows = Math.ceil(NTOK / tokensPerRow);
+
+        ctx.font = 'bold 12px Inter, sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.textAlign = 'center';
+        ctx.fillText('Reordered Sequence (to Self-Attention)', seqX + seqW / 2, padY - 10);
+
+        for (let s = 0; s < NTOK; s++) {
+            const patchIdx = order[s];
+            const col = s % tokensPerRow;
+            const row = Math.floor(s / tokensPerRow);
+            const tx = seqX + col * (tokenW + 4);
+            const ty = padY + 10 + row * (tokenH + 16);
+            const isProcessed = s < Math.floor(scanProgress);
+            const isCurrent = s === Math.floor(scanProgress);
+
+            ctx.globalAlpha = isProcessed ? 1.0 : 0.2;
+            if (isCurrent) ctx.globalAlpha = 0.7 + 0.3 * Math.sin(time * 6);
+            ctx.fillStyle = pmColor(patchValues[patchIdx]);
+            ctx.beginPath();
+            ctx.roundRect(tx, ty, tokenW, tokenH, 4);
+            ctx.fill();
+
+            ctx.globalAlpha = 1;
+            if (isCurrent) {
+                ctx.strokeStyle = '#f59e0b';
+                ctx.lineWidth = 2;
+            } else if (isProcessed) {
+                ctx.strokeStyle = 'rgba(14,165,233,0.5)';
+                ctx.lineWidth = 1;
+            } else {
+                ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+                ctx.lineWidth = 1;
+            }
+            ctx.beginPath();
+            ctx.roundRect(tx, ty, tokenW, tokenH, 4);
+            ctx.stroke();
+
+            // Index label
+            if (isProcessed || isCurrent) {
+                ctx.fillStyle = 'rgba(255,255,255,0.9)';
+                ctx.font = `bold ${Math.max(8, tokenW * 0.3)}px JetBrains Mono, monospace`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(s + 1, tx + tokenW / 2, ty + tokenH / 2);
+            }
+        }
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.font = 'bold 12px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Upwind \u2192 Downwind', seqX + seqW / 2, H - 10);
+
+        animId = requestAnimationFrame(draw);
+    }
+
+    const windPresets = [Math.PI, Math.PI / 2, Math.PI * 1.25];
+
+    window.setReorderWind = function(idx, btn) {
+        btn.parentElement.querySelectorAll('.anim-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        if (idx === 3) {
+            rotating = true;
+        } else {
+            rotating = false;
+            targetAngle = windPresets[idx];
+        }
+        scanProgress = 0; // restart scan on wind change
     };
 
     resize();
